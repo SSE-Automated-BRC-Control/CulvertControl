@@ -18,13 +18,12 @@ and triggering reactions to data inputs.
 import matplotlib.pyplot as plt
 import numpy as np
 
-#Reading main data
-MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
-#Reading Weather data CSV 
-WeatherData = np.loadtxt(fname = 'weather_data.csv', delimiter=',')
+
+
+
 
 #_________________________________________
-# Defining the classes
+# Defining classes
 
 class cell1():
     def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea):
@@ -63,6 +62,8 @@ class Lagoon():
         self.Max = MaxLevel
         self.Min = MinLevel
 
+        
+        
 #_______________________________________________
 #Environmental Simulation Setup
 
@@ -78,8 +79,8 @@ def environmentalSimulation(MainData, WeatherData):
 #    AGB_Daily= MainData[119:275,2]
     
     #Assigning Columns of CSV to Arrays 
-    percip= WeatherData[119:275,1] #mm
-    percip= percip/1000 #m
+    precip= WeatherData[119:275,1] #mm
+    precip= precip/1000 #m
     ETo= WeatherData[119:275,2] #mm
     ETo=ETo/1000 #m
 #    Temp= WeatherData[119:275,3] 
@@ -106,18 +107,18 @@ def environmentalSimulation(MainData, WeatherData):
     cell3.OD =0.5 #m
 
     #Assume Water Levels are optimal on fill date (April 31)
-    cell1.WL = cell1.OD-ETo[0]+percip[0]
-    cell2.WL = cell2.OD-ETo[0]+percip[0]
-    cell3.WL = cell3.OD-ETo[0]+percip[0]
+    cell1.WL = cell1.OD-ETo[0]+precip[0]
+    cell2.WL = cell2.OD-ETo[0]+precip[0]
+    cell3.WL = cell3.OD-ETo[0]+precip[0]
     
-    Lagoon.LL= Lagoon.LL-ETo[0]+percip[0] 
+    Lagoon.LL= Lagoon.LL-ETo[0]+precip[0] 
     
     #How much each cell needs to be filled up by initially
     cell1.FV = 0
     cell2.FV = 0
     cell3.FV = 0
 
-    return (ETo, percip, days)
+    return (ETo, precip, days)
 
     
     
@@ -160,7 +161,7 @@ def controlSystem():
 
 def Main(MainData, WeatherData):
     
-    ETo, percip, days = environmentalSimulation(MainData, WeatherData)
+    ETo, precip, days = environmentalSimulation(MainData, WeatherData)
     
     WaterLevel1 = np.array(cell1.WL)
     WaterLevel2 = np.array(cell2.WL)
@@ -172,9 +173,9 @@ def Main(MainData, WeatherData):
     
     for day in range(1,len(days)):
         #Changing Orignial Water Levels Based on ETo and Percip 
-        cell1.WL= cell1.WL-ETo[day]+percip[day]
-        cell2.WL= cell2.WL-ETo[day]+percip[day]    
-        cell3.WL= cell3.WL-ETo[day]+percip[day]
+        cell1.WL= cell1.WL-ETo[day]+precip[day]
+        cell2.WL= cell2.WL-ETo[day]+precip[day]    
+        cell3.WL= cell3.WL-ETo[day]+precip[day]
         
         #setting up daily value lists to graph afterwards
         WaterLevel1 = np.append(WaterLevel1,cell1.WL)
@@ -191,11 +192,24 @@ def Main(MainData, WeatherData):
         if FillVolume1[num]  or FillVolume2[num]  or FillVolume3[num] > 0:
             Gates_Operated=np.append(Gates_Operated,days[num])    
     
-    #Plot of Water Levels        
-    plt.plot(days, WaterLevel3)
-    plt.plot(days, WaterLevel2,linestyle="--")
-    plt.plot(days, WaterLevel1,linestyle="--")
+    #Plot of Water Levels     
+    maxWL3 = [cell3.OD]*len(days)
+    minWL3 = [cell3.OD - 0.02]*len(days)
+    plt.plot(days, WaterLevel3, linestyle='solid', color='black')
+    plt.plot(days, minWL3, linestyle='dashed', color='red')
+    plt.plot(days, maxWL3, linestyle='dashed', color='red')
+    plt.ylabel('Water Level')
+    plt.xlabel('Day')
+    plt.show()
+#    plt.plot(days, WaterLevel2,linestyle="--")
+#    plt.plot(days, WaterLevel1,linestyle="--")
     
+
+    
+#Read main data CSV
+MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
+#Read Weather data CSV 
+WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
 
     
 Main(MainData, WeatherData) 
