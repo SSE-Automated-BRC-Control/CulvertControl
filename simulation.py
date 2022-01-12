@@ -21,7 +21,6 @@ import numpy as np
 
 
 
-
 #_________________________________________
 # Defining classes
 
@@ -133,11 +132,11 @@ def controlSystem():
     variance = 0.02 #m for all measurements
     
     if cell3.WL >=(cell3.OD-variance):
-        cell3.FL =0
+        cell3.FV =0
     else:                                                                     
-        cell3.FL =(cell3.OD-cell3.WL)*cell3.SA
-        cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FL))/cell2.SA)
-    cell3.WL = cell3.WL+(cell3.FL/cell3.SA) 
+        cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
+        cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
+    cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
         cell2.FV =0
