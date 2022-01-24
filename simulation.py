@@ -21,7 +21,6 @@ import numpy as np
 
 
 
-
 #_________________________________________
 # Defining classes
 
@@ -133,11 +132,11 @@ def controlSystem():
     variance = 0.02 #m for all measurements
     
     if cell3.WL >=(cell3.OD-variance):
-        cell3.FL =0
+        cell3.FV =0
     else:                                                                     
-        cell3.FL =(cell3.OD-cell3.WL)*cell3.SA
-        cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FL))/cell2.SA)
-    cell3.WL = cell3.WL+(cell3.FL/cell3.SA) 
+        cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
+        cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
+    cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
         cell2.FV =0
@@ -153,8 +152,6 @@ def controlSystem():
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
     cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
-    
-    
 
 #__________________________________________
 # Putting Everything Together:
@@ -213,6 +210,61 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
 
     
 Main(MainData, WeatherData) 
+
+
+
+#____________________________________________________
+# Nitrogen Level Variance , Biomass Removes Nitrogen From Water 
+
+MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
+#Read Weather data CSV 
+WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
+(ETo, precip, days,bio_cumlative,AGB_Daily)=environmentalSimulation(MainData, WeatherData)
+(FillVolume3,FillVolume2,FillVolume1,WaterLevel1,WaterLevel2,WaterLevel3)=Main(MainData, WeatherData)
+
+
+TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
+Lagoon_TN = 500 #Lagoon Total Nitrogen concentration (g/m3)
+
+cell1_vol=[0]*len(days)
+cell2_vol=[0]*len(days)
+cell3_vol=[0]*len(days)
+
+#cell volumes
+for num in range(0,len(days)):
+   cell1_vol[num]=WaterLevel1[num]*cell1.SA
+   cell2_vol[num]=WaterLevel2[num]*cell2.SA
+   cell3_vol[num]=WaterLevel3[num]*cell3.SA
+
+
+cell1_TN_con=[0]*len(days) #grams/m3
+cell2_TN_con=[0]*len(days)
+cell3_TN_con=[0]*len(days)
+
+cell1_TN_removed = [0]*len(days) #grams
+cell2_TN_removed = [0]*len(days) 
+cell3_TN_removed = [0]*len(days) 
+
+#on the fill date all the water is the same concentration as the lagoon 
+cell1_TN_con[0]=Lagoon_TN 
+cell2_TN_con[0]=Lagoon_TN 
+cell3_TN_con[0]=Lagoon_TN 
+
+#TN removed is amount accumulated in biomass
+#AGB_Daily is g/m2 multiplied by SA equals grams 
+for num in range(1,len(days)):
+    cell1_TN_removed[num]=(AGB_Daily[num]*cell1.SA*TN_extract) #g
+    cell2_TN_removed[num]=(AGB_Daily[num]*cell2.SA*TN_extract)
+    cell3_TN_removed[num]=(AGB_Daily[num]*cell3.SA*TN_extract)    
+    
+#Cell conenctrations     g/m3
+for num in range(1,len(days)):
+    cell1_TN_con[num]=((cell1_TN_con[num-1]*cell1_vol[num])+(FillVolume1[num]*Lagoon_TN)-(cell1_TN_removed[num]))/(cell1_vol[num]+FillVolume1[num])
+    cell2_TN_con[num]=((cell2_TN_con[num-1]*cell2_vol[num])+(FillVolume2[num]*cell1_TN_con[num])-(cell2_TN_removed[num]))/(cell2_vol[num]+FillVolume2[num])
+    cell3_TN_con[num]=((cell3_TN_con[num-1]*cell3_vol[num])+(FillVolume3[num]*cell2_TN_con[num])-(cell3_TN_removed[num]))/(cell3_vol[num]+FillVolume3[num])
+    
+
+
 
 
     
