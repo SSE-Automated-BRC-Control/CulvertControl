@@ -68,6 +68,8 @@ class Lagoon():
 
 def environmentalSimulation(MainData, WeatherData):
     #For simplicity Days starts on April 30th until October 1st, Growing season can be adjusted
+    # using CSV data to assign precipitation and evapotranspiration values for each day in the simulation period
+    
     days=[]
     for num in range(156):
         days=np.append(days,num) 
@@ -93,7 +95,7 @@ def environmentalSimulation(MainData, WeatherData):
     
     #Lagoon Water Level Range 
     Lagoon.Max =1.5 #m
-    Lagoon.Min =0.3 #m
+    Lagoon.Min =0.3 #m  # WE could potentially use this minimum value as a warning indicator during a period of insufficient water
     
     #Lagoon Level Assumed to be max in Spring, Adjusted for ETo and Percip
     Lagoon.LL = Lagoon.Max
@@ -128,6 +130,8 @@ def controlSystem():
     # simulates the repsponce of the control system for obe single moment in time 
     # (can be one day or one reading)
     #Changes water levels based on if they need water 
+    # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
+    # is not explicitly defined in this code. 
     
     variance = 0.02 #m for all measurements
     
@@ -158,15 +162,18 @@ def controlSystem():
 
 def Main(MainData, WeatherData):
     
-    ETo, precip, days = environmentalSimulation(MainData, WeatherData)
+    ETo, precip, days = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
     
-    WaterLevel1 = np.array(cell1.WL)
+    WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     WaterLevel2 = np.array(cell2.WL)
     WaterLevel3 = np.array(cell3.WL)
     
-    FillVolume1 = np.array(cell1.FV)
+    FillVolume1 = np.array(cell1.FV) # ""
     FillVolume2 = np.array(cell2.FV)
     FillVolume3 = np.array(cell3.FV)
+    
+    #HERE we can add arrays that will accumulate other cell data nice nutrient levels. 
+    
     
     for day in range(1,len(days)):
         #Changing Orignial Water Levels Based on ETo and Percip 
@@ -182,7 +189,7 @@ def Main(MainData, WeatherData):
         FillVolume2 = np.append(FillVolume2,cell2.FV)
         FillVolume3 = np.append(FillVolume3,cell3.FV)
         
-        controlSystem()
+        controlSystem() # calling the control system allows the simulation to update key variables based on the daily input states
      
     Gates_Operated=[]
     for num in range(len(days)):
@@ -211,6 +218,7 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
     
 Main(MainData, WeatherData) 
 
+#[[[THIS SHOULD BE THE END OF THE PROGRAM]]]
 
 
 #____________________________________________________
