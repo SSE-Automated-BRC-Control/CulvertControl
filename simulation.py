@@ -3,7 +3,7 @@
 """
 Created on Fri Nov 19 12:51:12 2021
 
-@author: nettiewallace
+@author: nettiewallace & Arlo Reichert
 
 
 this script will contain two simulations
@@ -25,39 +25,43 @@ import numpy as np
 # Defining classes
 
 class cell1():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea):
+    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
         self.WL = WaterLevel
         self.SM = SoilMoisture
-        self.NiL = NiLevel
+        self.TN = NiLevel
         self.PhL = PhLevel
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
+        self.CV = Volume
 
 class cell2():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea):
+    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
         self.WL = WaterLevel
         self.SM = SoilMoisture
-        self.NiL = NiLevel
+        self.TN = NiLevel
         self.PhL = PhLevel
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
+        self.CV = Volume
     
 class cell3():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea):
+    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
         self.WL = WaterLevel
         self.SM = SoilMoisture
-        self.NiL = NiLevel
+        self.TN = NiLevel
         self.PhL = PhLevel
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
+        self.CV = Volume
 
 class Lagoon():
-    def __init__ (self, LagoonLevel, SurfaceArea, MaxLevel, MinLevel):
+    def __init__ (self, LagoonLevel, SurfaceArea, NiLevel, MaxLevel, MinLevel):
         self.LL = LagoonLevel
         self.SA = SurfaceArea
+        self.TN = NiLevel
         self.Max = MaxLevel
         self.Min = MinLevel
 
@@ -75,11 +79,11 @@ def environmentalSimulation(MainData, WeatherData):
         days=np.append(days,num) 
     days=days.astype(int)
     
-    #Data From CSV For Later
-#    bio_cumlative= MainData[119:275,1]
-#    AGB_Daily= MainData[119:275,2]
+    #Assigning Columns of MainData CSV to Arrays
+    bio_cumlative= MainData[119:275,1]
+    AGB_Daily= MainData[119:275,2]
     
-    #Assigning Columns of CSV to Arrays 
+    #Assigning Columns of WeatherData CSV to Arrays 
     precip= WeatherData[119:275,1] #mm
     precip= precip/1000 #m
     ETo= WeatherData[119:275,2] #mm
@@ -118,8 +122,12 @@ def environmentalSimulation(MainData, WeatherData):
     cell1.FV = 0
     cell2.FV = 0
     cell3.FV = 0
+    
+    cell1.CV = cell1.SA*cell1.WL
+    cell2.CV = cell2.SA*cell2.WL
+    cell3.CV = cell3.SA*cell3.WL
 
-    return (ETo, precip, days)
+    return (ETo, precip, days, bio_cumlative, AGB_Daily)
 
     
     
@@ -162,20 +170,44 @@ def controlSystem():
 
 def Main(MainData, WeatherData):
     
-    ETo, precip, days = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
+    ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
     
+    TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
+    Lagoon_TN = 500 #Lagoon Total Nitrogen concentration (g/m3)
+
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     WaterLevel2 = np.array(cell2.WL)
     WaterLevel3 = np.array(cell3.WL)
+    
+#    CellVolume1 = np.array(cell1.WL*cell1.SA)
+#    CellVolume2 = np.array(cell2.WL*cell2.SA)
+#    CellVolume3 = np.array(cell3.WL*cell3.SA)
     
     FillVolume1 = np.array(cell1.FV) # ""
     FillVolume2 = np.array(cell2.FV)
     FillVolume3 = np.array(cell3.FV)
     
-    #HERE we can add arrays that will accumulate other cell data nice nutrient levels. 
+    # Here we can add arrays that will accumulate other cell data like nutrient levels, FOR USE IN GRAPHS
+    cell1_TN = np.array(Lagoon_TN)
+    cell2_TN = np.array(Lagoon_TN)
+    cell3_TN = np.array(Lagoon_TN)
     
+    #TN removed is amount accumulated in biomass
+    #AGB_Daily is g/m2 multiplied by SA equals grams 
+    cell1_TN_removed = [0]*len(days) #[grams] || initiating lists for the amount of Ni removed each day
+    cell2_TN_removed = [0]*len(days) 
+    cell3_TN_removed = [0]*len(days) 
+    
+    for num in range(1,len(days)):
+        
+        cell1_TN_removed[num]=(AGB_Daily[num]*cell1.SA*TN_extract) #g
+        cell2_TN_removed[num]=(AGB_Daily[num]*cell2.SA*TN_extract)
+        cell3_TN_removed[num]=(AGB_Daily[num]*cell3.SA*TN_extract)  
+        
+
     
     for day in range(1,len(days)):
+        
         #Changing Orignial Water Levels Based on ETo and Percip 
         cell1.WL= cell1.WL-ETo[day]+precip[day]
         cell2.WL= cell2.WL-ETo[day]+precip[day]    
@@ -190,7 +222,22 @@ def Main(MainData, WeatherData):
         FillVolume3 = np.append(FillVolume3,cell3.FV)
         
         controlSystem() # calling the control system allows the simulation to update key variables based on the daily input states
-     
+        
+        cell1_TN =[0]*len(days) #[grams/m3] || initiating empty lists which can store the total Ni content
+        cell2_TN =[0]*len(days) # of each cell on each day of the simulation
+        cell3_TN =[0]*len(days)
+        
+        #on the fill date all the water is the same concentration as the lagoon so we can set [0] of each list to lagoon levels
+        cell1_TN[0]=Lagoon_TN 
+        cell2_TN[0]=Lagoon_TN 
+        cell3_TN[0]=Lagoon_TN 
+
+        cell1_TN[day]=((cell1_TN[day-1]*cell1.CV)+(FillVolume1[day]*Lagoon_TN)-(cell1_TN_removed[day]))/(cell1.CV+FillVolume1[day])
+        cell2_TN[day]=((cell2_TN[day-1]*cell2.CV)+(FillVolume2[day]*cell1_TN[day])-(cell2_TN_removed[day]))/(cell2.CV+FillVolume2[day])
+        cell3_TN[day]=((cell3_TN[day-1]*cell3.CV)+(FillVolume3[day]*cell2_TN[day])-(cell3_TN_removed[day]))/(cell3.CV+FillVolume3[day])
+    
+        
+        
     Gates_Operated=[]
     for num in range(len(days)):
         if FillVolume1[num]  or FillVolume2[num]  or FillVolume3[num] > 0:
@@ -218,59 +265,8 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
     
 Main(MainData, WeatherData) 
 
-#[[[THIS SHOULD BE THE END OF THE PROGRAM]]]
+''' THIS SHOULD BE THE END OF THE PROGRAM '''
 
-
-#____________________________________________________
-# Nitrogen Level Variance , Biomass Removes Nitrogen From Water 
-
-MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
-#Read Weather data CSV 
-WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
-(ETo, precip, days,bio_cumlative,AGB_Daily)=environmentalSimulation(MainData, WeatherData)
-(FillVolume3,FillVolume2,FillVolume1,WaterLevel1,WaterLevel2,WaterLevel3)=Main(MainData, WeatherData)
-
-
-TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
-Lagoon_TN = 500 #Lagoon Total Nitrogen concentration (g/m3)
-
-cell1_vol=[0]*len(days)
-cell2_vol=[0]*len(days)
-cell3_vol=[0]*len(days)
-
-#cell volumes
-for num in range(0,len(days)):
-   cell1_vol[num]=WaterLevel1[num]*cell1.SA
-   cell2_vol[num]=WaterLevel2[num]*cell2.SA
-   cell3_vol[num]=WaterLevel3[num]*cell3.SA
-
-
-cell1_TN_con=[0]*len(days) #grams/m3
-cell2_TN_con=[0]*len(days)
-cell3_TN_con=[0]*len(days)
-
-cell1_TN_removed = [0]*len(days) #grams
-cell2_TN_removed = [0]*len(days) 
-cell3_TN_removed = [0]*len(days) 
-
-#on the fill date all the water is the same concentration as the lagoon 
-cell1_TN_con[0]=Lagoon_TN 
-cell2_TN_con[0]=Lagoon_TN 
-cell3_TN_con[0]=Lagoon_TN 
-
-#TN removed is amount accumulated in biomass
-#AGB_Daily is g/m2 multiplied by SA equals grams 
-for num in range(1,len(days)):
-    cell1_TN_removed[num]=(AGB_Daily[num]*cell1.SA*TN_extract) #g
-    cell2_TN_removed[num]=(AGB_Daily[num]*cell2.SA*TN_extract)
-    cell3_TN_removed[num]=(AGB_Daily[num]*cell3.SA*TN_extract)    
-    
-#Cell conenctrations     g/m3
-for num in range(1,len(days)):
-    cell1_TN_con[num]=((cell1_TN_con[num-1]*cell1_vol[num])+(FillVolume1[num]*Lagoon_TN)-(cell1_TN_removed[num]))/(cell1_vol[num]+FillVolume1[num])
-    cell2_TN_con[num]=((cell2_TN_con[num-1]*cell2_vol[num])+(FillVolume2[num]*cell1_TN_con[num])-(cell2_TN_removed[num]))/(cell2_vol[num]+FillVolume2[num])
-    cell3_TN_con[num]=((cell3_TN_con[num-1]*cell3_vol[num])+(FillVolume3[num]*cell2_TN_con[num])-(cell3_TN_removed[num]))/(cell3_vol[num]+FillVolume3[num])
-    
 
 
 
