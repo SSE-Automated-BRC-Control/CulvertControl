@@ -173,39 +173,34 @@ def Main(MainData, WeatherData):
     ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
     
     TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
-    Lagoon_TN = 500 #Lagoon Total Nitrogen concentration (g/m3)
+    Lagoon.TN = 500 #Lagoon Total Nitrogen concentration (g/m3) ***CAN BE CHANGED/UPDATED***
 
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     WaterLevel2 = np.array(cell2.WL)
     WaterLevel3 = np.array(cell3.WL)
     
-#    CellVolume1 = np.array(cell1.WL*cell1.SA)
-#    CellVolume2 = np.array(cell2.WL*cell2.SA)
-#    CellVolume3 = np.array(cell3.WL*cell3.SA)
+    CellVolume1 = np.array(cell1.CV) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
+    CellVolume2 = np.array(cell2.CV)
+    CellVolume3 = np.array(cell3.CV)
     
-    FillVolume1 = np.array(cell1.FV) # ""
+    FillVolume1 = np.array(cell1.FV) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     FillVolume2 = np.array(cell2.FV)
     FillVolume3 = np.array(cell3.FV)
     
-    # Here we can add arrays that will accumulate other cell data like nutrient levels, FOR USE IN GRAPHS
-    cell1_TN = np.array(Lagoon_TN)
-    cell2_TN = np.array(Lagoon_TN)
-    cell3_TN = np.array(Lagoon_TN)
+    cell1_TN = np.array(Lagoon.TN)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
+    cell2_TN = np.array(Lagoon.TN)
+    cell3_TN = np.array(Lagoon.TN)
+    
+    cell1.TN = Lagoon.TN
+    cell2.TN = Lagoon.TN
+    cell3.TN = Lagoon.TN
     
     #TN removed is amount accumulated in biomass
     #AGB_Daily is g/m2 multiplied by SA equals grams 
     cell1_TN_removed = [0]*len(days) #[grams] || initiating lists for the amount of Ni removed each day
     cell2_TN_removed = [0]*len(days) 
     cell3_TN_removed = [0]*len(days) 
-    
-    for num in range(1,len(days)):
-        
-        cell1_TN_removed[num]=(AGB_Daily[num]*cell1.SA*TN_extract) #g
-        cell2_TN_removed[num]=(AGB_Daily[num]*cell2.SA*TN_extract)
-        cell3_TN_removed[num]=(AGB_Daily[num]*cell3.SA*TN_extract)  
-        
 
-    
     for day in range(1,len(days)):
         
         #Changing Orignial Water Levels Based on ETo and Percip 
@@ -220,21 +215,23 @@ def Main(MainData, WeatherData):
         FillVolume1 = np.append(FillVolume1,cell1.FV)
         FillVolume2 = np.append(FillVolume2,cell2.FV)
         FillVolume3 = np.append(FillVolume3,cell3.FV)
+        CellVolume1 = np.append(CellVolume1,cell1.CV) 
+        CellVolume2 = np.append(CellVolume2,cell2.CV)
+        CellVolume3 = np.append(CellVolume3,cell3.CV)
         
-        controlSystem() # calling the control system allows the simulation to update key variables based on the daily input states
+        controlSystem() # calling the control system allows the simulation to update key variables (Primarily Water Levels) based on the daily input states
         
-        cell1_TN =[0]*len(days) #[grams/m3] || initiating empty lists which can store the total Ni content
-        cell2_TN =[0]*len(days) # of each cell on each day of the simulation
-        cell3_TN =[0]*len(days)
+        cell1_TN_removed[day]=(AGB_Daily[day]*cell1.SA*TN_extract) #g
+        cell2_TN_removed[day]=(AGB_Daily[day]*cell2.SA*TN_extract)
+        cell3_TN_removed[day]=(AGB_Daily[day]*cell3.SA*TN_extract) 
         
-        #on the fill date all the water is the same concentration as the lagoon so we can set [0] of each list to lagoon levels
-        cell1_TN[0]=Lagoon_TN 
-        cell2_TN[0]=Lagoon_TN 
-        cell3_TN[0]=Lagoon_TN 
-
-        cell1_TN[day]=((cell1_TN[day-1]*cell1.CV)+(FillVolume1[day]*Lagoon_TN)-(cell1_TN_removed[day]))/(cell1.CV+FillVolume1[day])
-        cell2_TN[day]=((cell2_TN[day-1]*cell2.CV)+(FillVolume2[day]*cell1_TN[day])-(cell2_TN_removed[day]))/(cell2.CV+FillVolume2[day])
-        cell3_TN[day]=((cell3_TN[day-1]*cell3.CV)+(FillVolume3[day]*cell2_TN[day])-(cell3_TN_removed[day]))/(cell3.CV+FillVolume3[day])
+        cell1.TN=((cell1.TN*cell1.CV)+(cell1.FV*Lagoon.TN)-(cell1_TN_removed[day]))/(cell1.CV+cell1.FV)
+        cell2.TN=((cell2.TN*cell2.CV)+(cell2.FV*cell1.TN)-(cell2_TN_removed[day]))/(cell2.CV+cell2.FV)
+        cell3.TN=((cell3.TN*cell3.CV)+(cell3.FV*cell2.TN)-(cell3_TN_removed[day]))/(cell3.CV+cell3.FV)
+        
+        cell1_TN = np.append(cell1_TN,cell1.TN)
+        cell2_TN = np.append(cell2_TN,cell2.TN)
+        cell3_TN = np.append(cell3_TN,cell3.TN)
     
         
         
@@ -244,18 +241,30 @@ def Main(MainData, WeatherData):
             Gates_Operated=np.append(Gates_Operated,days[num])    
     
     #Plot of Water Levels     
-    maxWL3 = [cell3.OD]*len(days)
-    minWL3 = [cell3.OD - 0.02]*len(days)
-    plt.plot(days, WaterLevel3, linestyle='solid', color='black')
-    plt.plot(days, minWL3, linestyle='dashed', color='red')
-    plt.plot(days, maxWL3, linestyle='dashed', color='red')
-    plt.ylabel('Water Level')
-    plt.xlabel('Day')
-    plt.show()
+#    maxWL3 = [cell3.OD]*len(days)
+#    minWL3 = [cell3.OD - 0.02]*len(days)
+#    plt.plot(days, WaterLevel3, linestyle='solid', color='black')
+#    plt.plot(days, minWL3, linestyle='dashed', color='red')
+#    plt.plot(days, maxWL3, linestyle='dashed', color='red')
+#    plt.ylabel('Water Level')
+#    plt.xlabel('Day')
+#    plt.show()
 #    plt.plot(days, WaterLevel2,linestyle="--")
 #    plt.plot(days, WaterLevel1,linestyle="--")
-    
 
+    #Plot of Nutrient Levels
+#    plt.plot(days, cell1_TN, linestyle='solid', color='black')
+#    plt.ylabel('Cell 1: Total Nitrogen Per Day')
+#    plt.xlabel('Day')
+#    plt.show()
+#    plt.plot(days, cell2_TN, linestyle='solid', color='blue')
+#    plt.ylabel('Cell 2: Total Nitrogen Per Day')
+#    plt.xlabel('Day')
+#    plt.show()    
+    plt.plot(days, cell3_TN, linestyle='solid', color='green')
+    plt.ylabel('Cell 3: Total Nitrogen Per Day')
+    plt.xlabel('Day')
+    plt.show()
     
 #Read main data CSV
 MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
@@ -265,7 +274,7 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
     
 Main(MainData, WeatherData) 
 
-''' THIS SHOULD BE THE END OF THE PROGRAM '''
+''' END OF PROGRAM '''
 
 
 
