@@ -173,6 +173,8 @@ def Main(MainData, WeatherData):
     ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
     
     TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
+    PH_extract = 0.0026 #Total Phosphorus accumulation rate (percent of above ground biomass)
+#Lagoon.PH = ??????
     Lagoon.TN = 500 #Lagoon Total Nitrogen concentration (g/m3) ***CAN BE CHANGED/UPDATED***
 
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
