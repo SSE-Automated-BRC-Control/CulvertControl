@@ -176,8 +176,8 @@ def Main(MainData, WeatherData):
     TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
     TP_extract = 0.0026 #Total Phosphorus accumulation rate (percent of above ground biomass)
 
-    Lagoon.TP = 20 #Should be changed to reflect actual values
-    Lagoon.TN = 500 #Lagoon Total Nitrogen concentration (g/m3) ***CAN BE CHANGED/UPDATED***
+    Lagoon.TP = 0.55 #Should be changed to reflect actual values
+    Lagoon.TN = 7.07 #Lagoon Total Nitrogen concentration (g/m3) 
 
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     WaterLevel2 = np.array(cell2.WL)
@@ -257,9 +257,9 @@ def Main(MainData, WeatherData):
         cell2_TN = np.append(cell2_TN,cell2.TN)
         cell3_TN = np.append(cell3_TN,cell3.TN)
 
-        cell1_TP = np.append(cell1_TN,cell1.TN)
-        cell2_TP = np.append(cell2_TN,cell2.TN)
-        cell3_TP = np.append(cell3_TN,cell3.TN)   
+        cell1_TP = np.append(cell1_TP,cell1.TP)
+        cell2_TP = np.append(cell2_TP,cell2.TP)
+        cell3_TP = np.append(cell3_TP,cell3.TP)   
         
         
     Gates_Operated=[]
@@ -267,31 +267,123 @@ def Main(MainData, WeatherData):
         if FillVolume1[num]  or FillVolume2[num]  or FillVolume3[num] > 0:
             Gates_Operated=np.append(Gates_Operated,days[num])    
     
-    #Plot of Water Levels     
-#    maxWL3 = [cell3.OD]*len(days)
-#    minWL3 = [cell3.OD - 0.02]*len(days)
-#    plt.plot(days, WaterLevel3, linestyle='solid', color='black')
-#    plt.plot(days, minWL3, linestyle='dashed', color='red')
-#    plt.plot(days, maxWL3, linestyle='dashed', color='red')
-#    plt.ylabel('Water Level')
-#    plt.xlabel('Day')
-#    plt.show()
-#    plt.plot(days, WaterLevel2,linestyle="--")
-#    plt.plot(days, WaterLevel1,linestyle="--")
+            
+    def plotWaterLevel(cell):
+        #Plot of Water Levels     
+        maxWL3 = [cell3.OD]*len(days)
+        minWL3 = [cell3.OD - 0.02]*len(days)
+        
+        if cell == '3':
+            plt.plot(days, WaterLevel3, linestyle='solid', color='black')
+            plt.plot(days, minWL3, linestyle='dashed', color='red')
+            plt.plot(days, maxWL3, linestyle='dashed', color='red')
+            plt.ylabel('Cell 3: Water Level')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '2': 
+            plt.plot(days, WaterLevel2,linestyle='solid', color='blue')
+            plt.plot(days, minWL3, linestyle='dashed', color='red')
+            plt.plot(days, maxWL3, linestyle='dashed', color='red')
+            plt.ylabel('Cell 2: Water Level')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '1':
+            plt.plot(days, WaterLevel1,linestyle='solid', color='green')
+            plt.plot(days, minWL3, linestyle='dashed', color='red')
+            plt.plot(days, maxWL3, linestyle='dashed', color='red')
+            plt.ylabel('Cell 1: Water Level')
+            plt.xlabel('Day')
+            plt.show()
 
-    #Plot of Nutrient Levels
-#    plt.plot(days, cell1_TN, linestyle='solid', color='black')
-#    plt.ylabel('Cell 1: Total Nitrogen Per Day')
-#    plt.xlabel('Day')
-#    plt.show()
-#    plt.plot(days, cell2_TN, linestyle='solid', color='blue')
-#    plt.ylabel('Cell 2: Total Nitrogen Per Day')
-#    plt.xlabel('Day')
-#    plt.show()    
-    plt.plot(days, cell3_TN, linestyle='solid', color='green')
-    plt.ylabel('Cell 3: Total Nitrogen Per Day')
-    plt.xlabel('Day')
-    plt.show()
+    def plotNi(cell):
+        #Plot of Nitrogen Levels
+        zero= [0]*len(days)
+        if cell == '1':
+            plt.plot(days, cell1_TN, linestyle='solid', color='green')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 1: Total Nitrogen Per Day')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '2':
+            plt.plot(days, cell2_TN, linestyle='solid', color='blue')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 2: Total Nitrogen Per Day')
+            plt.xlabel('Day')
+            plt.show()    
+        if cell == '3':
+            plt.plot(days, cell3_TN, linestyle='solid', color='black')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 3: Total Nitrogen Per Day')
+            plt.xlabel('Day')
+            plt.show()
+            
+    def plotPh(cell):
+        #Plot of Phosphorus Levels
+        zero= [0]*len(days)
+        if cell == '1':
+            plt.plot(days, cell1_TP, linestyle='solid', color='green')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 1: Total Phosphorus Per Day')
+            plt.xlabel('Day')
+            plt.show()            
+        if cell == '2':
+            plt.plot(days, cell3_TN, linestyle='solid', color='blue')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 2: Total Phosphorus Per Day')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '3':
+            plt.plot(days, cell3_TN, linestyle='solid', color='black')
+            plt.plot(days, zero, linestyle='solid', color='red')
+            plt.ylabel('Cell 3: Total Phosphorus Per Day')
+            plt.xlabel('Day')
+            plt.show()
+            
+    def plotFillVolume(cell):
+        #Plot of Fill Volumes for each day
+        if cell == '1':
+            plt.scatter(days, FillVolume1, color='blue')
+            plt.ylabel('Cell 1: Daily Fill Volume')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '2':
+            plt.scatter(days, FillVolume2, color='blue')
+            plt.ylabel('Cell 2: Daily Fill Volume')
+            plt.xlabel('Day')
+            plt.show()
+        if cell == '3':
+            plt.scatter(days, FillVolume3, color='blue')
+            plt.ylabel('Cell 3: Daily Fill Volume')
+            plt.xlabel('Day')
+            plt.show()        
+            
+    def plotCellVolume(cell):
+        #Plot of Cell Volumes for each day
+        #We might want to adjust the scale or the type of graph for better presentation
+        if cell == '1':
+            plt.plot(days, CellVolume1,linestyle='solid', color='blue')
+            plt.ylabel('Cell 1: Daily Cell Volume')
+            plt.xlabel('Day')
+            plt.show()  
+        if cell == '2':
+            plt.plot(days, CellVolume2,linestyle='solid', color='blue')
+            plt.ylabel('Cell 2: Daily Cell Volume')
+            plt.xlabel('Day')
+            plt.show()  
+        if cell == '3':
+            plt.plot(days, CellVolume3,linestyle='solid', color='blue')
+            plt.ylabel('Cell 3: Daily Cell Volume')
+            plt.xlabel('Day')
+            plt.show()       
+    
+    cell = '3' # change this variable depending on which cell graphs you want to see
+#    plotWaterLevel(cell)
+#    plotNi(cell)
+#    plotPh(cell)
+    plotFillVolume(cell)
+#    plotCellVolume(cell)
+    
+    
     
 #Read main data CSV
 MainData = np.loadtxt(fname = 'Output_data.csv', delimiter=',')
