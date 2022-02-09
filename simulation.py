@@ -29,7 +29,7 @@ class cell1():
         self.WL = WaterLevel
         self.SM = SoilMoisture
         self.TN = NiLevel
-        self.PhL = PhLevel
+        self.TP = PhLevel
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
@@ -39,8 +39,8 @@ class cell2():
     def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
         self.WL = WaterLevel
         self.SM = SoilMoisture
-        self.TN = NiLevel
-        self.PhL = PhLevel
+        self.TN = NiLevel #TN = total nitrogen 
+        self.TP = PhLevel #TP = total phosphorus 
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
@@ -51,17 +51,18 @@ class cell3():
         self.WL = WaterLevel
         self.SM = SoilMoisture
         self.TN = NiLevel
-        self.PhL = PhLevel
+        self.TP = PhLevel
         self.FV = FillVolume
         self.OD = OptimalDepth
         self.SA = SurfaceArea
         self.CV = Volume
 
 class Lagoon():
-    def __init__ (self, LagoonLevel, SurfaceArea, NiLevel, MaxLevel, MinLevel):
+    def __init__ (self, LagoonLevel, SurfaceArea, NiLevel, PhLevel, MaxLevel, MinLevel):
         self.LL = LagoonLevel
         self.SA = SurfaceArea
         self.TN = NiLevel
+        self.TP = PhLevel
         self.Max = MaxLevel
         self.Min = MinLevel
 
@@ -173,8 +174,9 @@ def Main(MainData, WeatherData):
     ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(MainData, WeatherData) # take the ETO and precip values for each day of the simulation
     
     TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
-    PH_extract = 0.0026 #Total Phosphorus accumulation rate (percent of above ground biomass)
-#Lagoon.PH = ??????
+    TP_extract = 0.0026 #Total Phosphorus accumulation rate (percent of above ground biomass)
+
+    Lagoon.TP = 20 #Should be changed to reflect actual values
     Lagoon.TN = 500 #Lagoon Total Nitrogen concentration (g/m3) ***CAN BE CHANGED/UPDATED***
 
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
@@ -192,16 +194,28 @@ def Main(MainData, WeatherData):
     cell1_TN = np.array(Lagoon.TN)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     cell2_TN = np.array(Lagoon.TN)
     cell3_TN = np.array(Lagoon.TN)
-    
+
+    cell1_TP = np.array(Lagoon.TP)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
+    cell2_TP = np.array(Lagoon.TP)
+    cell3_TP = np.array(Lagoon.TP)
+
     cell1.TN = Lagoon.TN
     cell2.TN = Lagoon.TN
     cell3.TN = Lagoon.TN
+
+    cell1.TP = Lagoon.TP
+    cell2.TP = Lagoon.TP
+    cell3.TP = Lagoon.TP
     
     #TN removed is amount accumulated in biomass
     #AGB_Daily is g/m2 multiplied by SA equals grams 
     cell1_TN_removed = [0]*len(days) #[grams] || initiating lists for the amount of Ni removed each day
     cell2_TN_removed = [0]*len(days) 
     cell3_TN_removed = [0]*len(days) 
+
+    cell1_TP_removed = [0]*len(days) #[grams] || initiating lists for the amount of Ph removed each day
+    cell2_TP_removed = [0]*len(days) 
+    cell3_TP_removed = [0]*len(days) 
 
     for day in range(1,len(days)):
         
@@ -226,15 +240,26 @@ def Main(MainData, WeatherData):
         cell1_TN_removed[day]=(AGB_Daily[day]*cell1.SA*TN_extract) #g
         cell2_TN_removed[day]=(AGB_Daily[day]*cell2.SA*TN_extract)
         cell3_TN_removed[day]=(AGB_Daily[day]*cell3.SA*TN_extract) 
+
+        cell1_TP_removed[day]=(AGB_Daily[day]*cell1.SA*TP_extract) #g
+        cell2_TP_removed[day]=(AGB_Daily[day]*cell2.SA*TP_extract)
+        cell3_TP_removed[day]=(AGB_Daily[day]*cell3.SA*TP_extract) 
         
-        cell1.TN=((cell1.TN*cell1.CV)+(cell1.FV*Lagoon.TN)-(cell1_TN_removed[day]))/(cell1.CV+cell1.FV)
-        cell2.TN=((cell2.TN*cell2.CV)+(cell2.FV*cell1.TN)-(cell2_TN_removed[day]))/(cell2.CV+cell2.FV)
-        cell3.TN=((cell3.TN*cell3.CV)+(cell3.FV*cell2.TN)-(cell3_TN_removed[day]))/(cell3.CV+cell3.FV)
+        cell1.TN=((cell1.TN*cell1.CV)+(cell1.FV*Lagoon.TN)-(cell1_TN_removed[day]))/(cell1.CV)
+        cell2.TN=((cell2.TN*cell2.CV)+(cell2.FV*cell1.TN)-(cell2_TN_removed[day]))/(cell2.CV)
+        cell3.TN=((cell3.TN*cell3.CV)+(cell3.FV*cell2.TN)-(cell3_TN_removed[day]))/(cell3.CV)
         
+        cell1.TP=((cell1.TP*cell1.CV)+(cell1.FV*Lagoon.TP)-(cell1_TP_removed[day]))/(cell1.CV)
+        cell2.TP=((cell2.TP*cell2.CV)+(cell2.FV*cell1.TP)-(cell2_TP_removed[day]))/(cell2.CV)
+        cell3.TP=((cell3.TP*cell3.CV)+(cell3.FV*cell2.TP)-(cell3_TP_removed[day]))/(cell3.CV)
+
         cell1_TN = np.append(cell1_TN,cell1.TN)
         cell2_TN = np.append(cell2_TN,cell2.TN)
         cell3_TN = np.append(cell3_TN,cell3.TN)
-    
+
+        cell1_TP = np.append(cell1_TN,cell1.TN)
+        cell2_TP = np.append(cell2_TN,cell2.TN)
+        cell3_TP = np.append(cell3_TN,cell3.TN)   
         
         
     Gates_Operated=[]
