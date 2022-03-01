@@ -17,6 +17,9 @@ and triggering reactions to data inputs.
 
 import matplotlib.pyplot as plt
 import numpy as np
+import yagmail
+# start a connection
+yag = yagmail.SMTP("strategicsystemspi@gmail.com")
 
 
 
@@ -142,18 +145,30 @@ def controlSystem():
     # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
     # is not explicitly defined in this code. 
     
+    to = "recipient_email_address" # where to send email alerts
+    subject = "ALERT from your automated retention cells!"
+    
     variance = 0.02 #m for all measurements
     # First, check to see if water of overfilled anywhere:
     if cell1.WL > (cell1.OD+variance):
         cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
+        cell1.WL = cell1.WL+(cell1.FV/cell1.SA) 
+        body = "Retention cell 1 has exceeded its allowable water depth. Drainage of {} to cell 2 has begun.".format((-cell1.FV))
+        yag.send(to, subject, body)  # sending the email
 
     if cell2.WL > (cell2.OD+variance):
         cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
         cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
+        cell2.WL = cell2.WL+(cell2.FV/cell2.SA)         
+        body = "Retention cell 2 has exceeded its allowable water depth. Drainage of {} to cell 3 has begun.".format((-cell2.FV))
+        yag.send(to, subject, body)  # sending the email
 
     if cell3.WL > (cell3.OD+variance):
         cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
+        cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
+        body = "Retention cell 3 has exceeded its allowable water depth. Drainage of {} out of cell 3 has begun.".format((-cell3.FV))
+        yag.send(to, subject, body)  # sending the email
 
     # Second, check to see if water is underfilled anywhere:
     if cell3.WL >=(cell3.OD-variance):
@@ -161,21 +176,27 @@ def controlSystem():
     else:                                                                     
         cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
-    cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
-        
+        cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
+        body = "Retention cell 3 has dropped below its allowable water depth. Drainage of {} to cell 3 from cell 2 has begun.".format((-cell3.FV))
+        yag.send(to, subject, body)  # sending the email
+
     if cell2.WL >=(cell2.OD-variance):
         cell2.FV =0
     else:                                                                    
         cell2.FV =(cell2.OD-cell2.WL)*cell2.SA
         cell1.WL =((cell1.WL*cell1.SA)-((cell2.FV)))/cell1.SA
-    cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
+        cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
+        body = "Retention cell 2 has dropped below its allowable water depth. Drainage of {} to cell 2 from cell 1 has begun.".format((-cell2.FV))
+        yag.send(to, subject, body)  # sending the email
       
     if cell1.WL >=(cell1.OD-variance):
         cell1.FV =0
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
-    cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
+        cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
+        body = "Retention cell 1 has dropped below its allowable water depth. Drainage of {} to cell 1 from the lagoon source has begun.".format((-cell1.FV))
+        yag.send(to, subject, body)  # sending the email
 
 
 #__________________________________________
@@ -406,16 +427,3 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
 Main(MainData, WeatherData) 
 
 ''' END OF PROGRAM '''
-
-
-
-
-    
-
-
-
-
-
-
-
-
