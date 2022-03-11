@@ -143,7 +143,19 @@ def controlSystem():
     # is not explicitly defined in this code. 
     
     variance = 0.02 #m for all measurements
-    
+    # First, check to see if water of overfilled anywhere:
+    if cell1.WL > (cell1.OD+variance):
+        cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
+        cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
+
+    if cell2.WL > (cell2.OD+variance):
+        cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
+        cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
+
+    if cell3.WL > (cell3.OD+variance):
+        cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
+
+    # Second, check to see if water is underfilled anywhere:
     if cell3.WL >=(cell3.OD-variance):
         cell3.FV =0
     else:                                                                     
@@ -270,7 +282,7 @@ def Main(MainData, WeatherData):
             
     def plotWaterLevel(cell):
         #Plot of Water Levels     
-        maxWL3 = [cell3.OD]*len(days)
+        maxWL3 = [cell3.OD + 0.02]*len(days)
         minWL3 = [cell3.OD - 0.02]*len(days)
         
         if cell == '3':
@@ -376,11 +388,11 @@ def Main(MainData, WeatherData):
             plt.xlabel('Day')
             plt.show()       
     
-    cell = '3' # change this variable depending on which cell graphs you want to see
-#    plotWaterLevel(cell)
+    cell = '1' # change this variable depending on which cell graphs you want to see
+    plotWaterLevel(cell)
 #    plotNi(cell)
 #    plotPh(cell)
-    plotFillVolume(cell)
+#    plotFillVolume(cell)
 #    plotCellVolume(cell)
     
     
@@ -394,7 +406,6 @@ WeatherData = np.loadtxt(fname = 'Weather_data.csv', delimiter=',')
 Main(MainData, WeatherData) 
 
 ''' END OF PROGRAM '''
-
 
 
 
