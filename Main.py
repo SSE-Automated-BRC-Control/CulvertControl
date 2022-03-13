@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Created on Fri Mar 11 09:51:14 2022
 
 @author: nettiewallace
 """
+
 import numpy as np
 
 #Biomass Variables
@@ -22,7 +25,7 @@ precip= WeatherData[119:275,1] #mm
 Temp= WeatherData[119:275,3] 
 RAD=WeatherData[119:275,4]
 
-def biomass (pm,kco,o,tbase,Knp,IPAR,Ya):
+def biomass (pm,kco,o,tbase,Knp,IPAR,Ya,day):
   
 # This funciton predicts the quantity of biomass produced 
 # The cumulative biomass produced is the total biomass  
@@ -72,4 +75,55 @@ def biomass (pm,kco,o,tbase,Knp,IPAR,Ya):
     
   return(AGB_Daily,LAI,PAR,RAD,AGB_cumulative)
 
-AGB_Daily, lai, par, rad, AGB_cumulative= biomass (pm,kco,o,tbase,Knp,IPAR,Ya)
+
+#Calibration Data ______________________________
+
+def ETo_calc (day):
+    calibration_data= np.loadtxt(fname = 'gleam_data.csv', delimiter=',')
+    Ep_wpg=calibration_data
+
+#HARGREAVES DATA ________________________________________
+
+#Radiaiton Variables
+    lat = 0.85172 #radians 
+#Extraterrestial Radiation Variables
+    data_file = np.loadtxt(fname ='Sample data file2.csv', delimiter=',')
+    KET=0.00236
+    RA=[0]*len(day)
+    ETo=[0]*len(day)
+    mean_temp=[0]*len(day)
+    
+    high_temp = data_file[119:275,4]
+    low_temp= data_file[119:275,5]
+  
+    for num in range(len(day)):
+      mean_temp[num]=(high_temp[num]+low_temp[num])/2
+
+#Extraterrestial Radiation Calculation
+    solar_declination=[0]*len(day)
+    realitive_distance=[0]*len(day)
+    sunset_hour=[0]*len(day)
+  
+    for num in range(len(day)): 
+      solar_declination[num]=(0.409*(np.sin((0.0172*num)-1.39)));
+      sunset_hour[num] = np.arccos(-np.tan(lat)*np.tan(solar_declination[num]));
+      realitive_distance[num] = 1+0.033*np.cos(0.0172*num);
+      RA[num]=0.408*37.6*realitive_distance[num]*((sunset_hour[num]*np.sin(lat)*np.sin(solar_declination[num]))+np.cos(lat)*np.cos(solar_declination[num])*np.sin(sunset_hour[num]))
+      #RA in mm/day
+
+#ETo Hargraves Method
+    for num in range(len(day)):
+        ETo[num]=(high_temp[num]-low_temp[num])        
+        
+        ETo[num]=KET*RA[num]*(mean_temp[num]+17.8)*np.sqrt((high_temp[num]-low_temp[num]))
+
+#Calibrating Hargraves Method Using Room Mean Square Deviation (RMSD)
+#KET variable was manually adjusted based on below calcuations 
+   # NUM =(Ep_wpg-ETo)**2;
+   # RMSD = (sum[NUM]/(len[ETo]))**0.5
+    
+    return (ETo) 
+
+ETO_Daily = ETo_calc(day)
+
+AGB_Daily, lai, par, rad, AGB_cumulative= biomass (pm,kco,o,tbase,Knp,IPAR,Ya, day)
