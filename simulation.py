@@ -310,7 +310,7 @@ def controlSystem(date):
         Solution = 'Addition'
         Volume = abs(cell3.FV)
         emailAlert(Date, Cell, Problem, Solution, Volume)
-    cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
+        cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
         cell2.FV =0
@@ -323,7 +323,7 @@ def controlSystem(date):
         Solution = 'Addition'
         Volume = abs(cell2.FV)
         emailAlert(Date, Cell, Problem, Solution, Volume)
-    cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
+        cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
       
     if cell1.WL >=(cell1.OD-variance):
         cell1.FV =0
@@ -336,7 +336,7 @@ def controlSystem(date):
         Solution = 'Addition'
         Volume = cell1.FV
         emailAlert(Date, Cell, Problem, Solution, Volume)
-    cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
+        cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
 
 #__________________________________________
