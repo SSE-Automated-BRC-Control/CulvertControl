@@ -331,10 +331,10 @@ def controlSystem(date):
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
         Date = str(date)
-        Cell = 3
+        Cell = 1
         Problem = 'below'
         Solution = 'Addition'
-        Volume = cell3.FV
+        Volume = cell1.FV
         emailAlert(Date, Cell, Problem, Solution, Volume)
     cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
