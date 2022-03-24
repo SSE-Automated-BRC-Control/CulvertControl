@@ -1,0 +1,104 @@
+import math
+
+# Definitions Used from Git Hub
+
+class cell1():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell2():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell3():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class Lagoon():
+    def __init__(self, LagoonLevel, SurfaceArea, MaxLevel, MinLevel):
+        self.LL = LagoonLevel
+        self.SA = SurfaceArea
+        self.Max = MaxLevel
+        self.Min = MinLevel
+
+
+# Culvert Dimensions, Slop and Friction Coefficient
+Diam = 0.6096
+R = Diam / 2
+SLOPE = 0.01
+n = 0.022
+
+# Cell and Lagoon Surface Areas
+cell1.SA = 9000
+cell2.SA = 9000
+cell3.SA = 6000
+Lagoon.SA = 13000
+
+# Cell Optimal Depths
+cell1.OD = 0.5
+cell2.OD = 0.5
+cell3.OD = 0.5
+
+# Initial Depths at start of transfer (unsure how this will be integrated)
+# These are just variables I chose at Random, would be the final depth for each cell before at end of season,
+# or when system needs to be emptied
+cell1.WL = 0.4
+cell2.WL = 0.4
+cell3.WL = 0.4
+
+# Cell Volumes based on start depth
+cell1CV = cell1.WL * cell1.SA
+cell2CV = cell2.WL * cell2.SA
+cell3CV = cell3.WL * cell3.SA
+
+# I calculated a "total" depth across the entire system
+# Used that to determine the entire drain time
+VTotal = cell1CV + cell2CV + cell3CV
+SATotal = cell1.SA + cell2.SA + cell3.SA
+DT = VTotal / SATotal
+
+
+Depth = []
+Flow = []
+
+while DT > 0.01:
+    if DT > R:
+        H1 = (2 * R - DT)
+        Theta = 2 * math.acos((R - H1) / R)
+        A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+        P = (2 * math.pi * R) - R * Theta
+        Rh = A / P
+        Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    elif DT < R:
+        H1 = DT
+        Theta = 2 * math.acos((R - H1) / R)
+        A = (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+        P = R * Theta
+        Rh = A / P
+        Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    Depth.append(DT)
+    Flow.append(Q)
+    DT += (Q * (-60)) / SATotal
+
+print('Cell Depths')
+print('Cell 1', cell1.WL, 'm')
+print('Cell 2', cell1.WL, 'm')
+print('Cell 3', cell1.WL, 'm')
+print('Time required to drain retention system:', len(Depth)/3600, 'days')\
+
+
+
+
+
