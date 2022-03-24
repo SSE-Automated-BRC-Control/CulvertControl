@@ -1,0 +1,177 @@
+import math
+
+# Definitions Used from Git Hub
+
+class cell1():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell2():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell3():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class Lagoon():
+    def __init__(self, LagoonLevel, SurfaceArea, MaxLevel, MinLevel):
+        self.LL = LagoonLevel
+        self.SA = SurfaceArea
+        self.Max = MaxLevel
+        self.Min = MinLevel
+
+
+# Culvert Dimensions, Slop and Friction Coefficient
+Diam = 0.6096
+R = Diam / 2
+SLOPE = 0.01
+n = 0.022
+
+# Cell and Lagoon Surface Areas
+cell1.SA = 9000
+cell2.SA = 9000
+cell3.SA = 6000
+Lagoon.SA = 13000
+
+# Cell Optimal Depths
+cell1.OD = 0.5
+cell2.OD = 0.5
+cell3.OD = 0.5
+
+# Initial Depths at start of transfer (unsure how this will be integrated)
+# On fill days my idea was to use that current water depth as the depth for each cell.
+# These are just variables I chose at Random
+cell1.WL = 0.4
+cell2.WL = 0.4
+cell3.WL = 0.4
+Lagoon.LL = 1.5
+
+# Max and Min of Lagoon
+Lagoon.Max = 1.5
+Lagoon.Min = 0.3
+
+# Empty lists that store the depths for each cell
+Depth1 = []
+Depth2 = []
+Depth3 = []
+Flow2 = []
+
+# Transfer between cells 2 and 3
+# Continues loop until Cell 3 Depth reaches 0.5 m
+# Alternates between 2 open flow equations based on Cell 2 Depth
+while cell3.WL < cell3.OD:
+    while cell2.WL > 0.1:
+        if cell2.WL > R:
+            H1 = (2 * R - cell2.WL)
+            Theta = 2 * math.acos((R - H1) / R)
+            A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+            P = (2 * math.pi * R) - R * Theta
+            Rh = A / P
+            Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+        elif cell2.WL < R:
+            H1 = cell2.WL
+            Theta = 2 * math.acos((R - H1) / R)
+            A = (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+            P = R * Theta
+            Rh = A / P
+            Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+        Depth2.append(cell2.WL)
+        Flow2.append(Q)
+        cell2.WL += (Q * (-60)) / cell2.SA
+        Depth3.append(cell3.WL)
+        cell3.WL += (Q * 60) / cell3.SA
+        if cell3.WL > 0.5:
+            break
+
+# Prints the end depth of Cell 2 and 3, time and volume transferred
+print("\u0332".join("Cell 3 Transfer"))
+print('Cell 2 is drained from a  depth of', "{:.2f}".format(Depth2[1]), 'm, to', "{:.2f}".format(Depth2[-1]), 'm')
+print('Cell 3 is filled from a depth of', "{:.2f}".format(Depth3[1]), 'm , to', "{:.2f}".format(Depth3[-1]), 'm')
+print('The transfer took', len(Depth3), 'minutes')
+print('A Total of', "{:.2f}".format((Depth3[-1]-Depth3[1]) * cell3.SA), 'm^3 was transferred')
+print('\n')
+
+Depth2 = []
+Flow = []
+
+# Transfer between cells 1 and 2
+# Continues loop until Cell 2 Depth reaches 0.5 m
+# Alternates between 2 open flow equations based on Cell 2 Depth
+while cell2.WL < cell2.OD:
+    while cell1.WL > 0.1:
+        if cell1.WL > R:
+            H1 = (2 * R - cell1.WL)
+            Theta = 2 * math.acos((R - H1) / R)
+            A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+            P = (2 * math.pi * R) - R * Theta
+            Rh = A / P
+            Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+        elif cell1.WL < R:
+            H1 = cell1.WL
+            Theta = 2 * math.acos((R - H1) / R)
+            A = (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+            P = R * Theta
+            Rh = A / P
+            Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+        Depth1.append(cell1.WL)
+        Flow.append(Q)
+        cell1.WL += (Q * (-60)) / cell1.SA
+        Depth2.append(cell2.WL)
+        cell2.WL += (Q * 60) / cell1.SA
+        if cell2.WL > 0.5:
+            break
+
+# Prints the end depth of Cell 2 and 3, time and volume transferred
+# Used the length of the list to determine the amount of time it takes (# of iterations)
+print("\u0332".join("Cell 2 Transfer"))
+print('Cell 1 is drained from a depth of', "{:.2f}".format(Depth1[1]), 'm, to', "{:.2f}".format(Depth1[-1]), 'm')
+print('Cell 2 is filled from a depth of', "{:.2f}".format(Depth2[1]), 'm, to', "{:.2f}".format(Depth2[-1]), 'm')
+print('The transfer took', len(Depth2), 'minutes')
+print('A Total of', "{:.2f}".format((Depth2[-1]-Depth2[1]) * cell2.SA), 'm^3 was transferred')
+print('\n')
+
+Depth1 = []
+DepthL = []
+FlowL = []
+
+# Transfer between cells 1 and lagoon
+# Continues loop until Cell 1 Depth reaches 0.5 m
+# Assumed an average velocity for when the water is higher than the culvert diameter
+# Changes to open channel flow if Lagoon height drops below Diam
+
+while cell1.WL < cell1.OD:
+    if Lagoon.LL > Diam:
+        QL = math.sqrt(Lagoon.LL * 2 * 9.81) * (math.pi * (R**2))
+    elif Lagoon.LL < Diam:
+        H1 = (2 * R - Lagoon.LL)
+        Theta = 2 * math.acos((R - H1) / R)
+        A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+        P = (2 * math.pi * R) - R * Theta
+        Rh = A / P
+        QL = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    DepthL.append(Lagoon.LL)
+    FlowL.append(QL)
+    Lagoon.LL += (Q * (-60)) / Lagoon.SA
+    Depth1.append(cell1.WL)
+    cell1.WL += (Q * 60) / cell1.SA
+    if cell1.WL > 0.5:
+        break
+print("\u0332".join("Cell 1 Transfer"))
+print('Cell 1 is filled from a depth of', "{:.2f}".format(Depth1[1]), 'm, to', "{:.2f}".format(Depth1[-1]), 'm')
+print('The transfer took', len(Depth1), 'minutes')
+print('A Total of', "{:.2f}".format((Depth1[-1]-Depth1[1]) * cell1.SA), 'm^3 was transferred')
+print('\n')
+print('Total time of water transfer', (len(Depth3) + len(Depth2) + len(Depth1)) / 60, 'hours')
