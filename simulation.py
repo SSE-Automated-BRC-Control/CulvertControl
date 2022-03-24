@@ -143,8 +143,8 @@ def environmentalSimulation(data_file):
 
     #Calibration Data ______________________________
 
-    calibration_data= np.loadtxt(fname = 'gleam_data.csv', delimiter=',')
-    Ep_wpg=calibration_data
+#    calibration_data= np.loadtxt(fname = 'gleam_data.csv', delimiter=',')
+#    Ep_wpg=calibration_data
 
     #HARGREAVES DATA ________________________________________
 
