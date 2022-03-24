@@ -17,6 +17,7 @@ and triggering reactions to data inputs.
 
 import matplotlib.pyplot as plt
 import numpy as np
+import smtplib, ssl
 
 #_________________________________________
 # Defining classes
@@ -225,11 +226,38 @@ def environmentalSimulation(data_file):
 
     return (ETo, precip, day, bio_cumlative, AGB_Daily)
 
+
+#_____________________________________________________
+# Email Alert function 
+
+def emailAlert(Date, Cell, Problem, Solution, Volume):
     
+    port = 465  # For SSL
+    smtp_server = "smtp.gmail.com"
+    sender_email = "strategicsystemspi@gmail.com"  # Enter your address
+    receiver_email = "strategicsystemspi@gmail.com"  # Enter receiver address
+    password = input("Type your password and press enter: ")
+    
+    for num in range(1):
+        message = """\
+        Subject: Update From Automated Retention Cell.
+        
+
+        This message is sent from Python.
+    
+        Update from {date}: Retention cell {cellnum} is {problem} its allowable water depth. {solution} of {volume} m^3 has begun. """
+        
+    
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
+            server.login(sender_email, password)
+            server.sendmail(sender_email, receiver_email, message.format(date = Date, cellnum =Cell, problem = Problem, solution = Solution , volume = Volume)) 
+
+ 
 #_________________________________________________
 #Control System Simulation
 
-def controlSystem(): 
+def controlSystem(date): 
     # simulates the repsponce of the control system for obe single moment in time 
     # (can be one day or one reading)
     #Changes water levels based on if they need water 
@@ -242,22 +270,46 @@ def controlSystem():
         cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
-    
+        Date = str(date)
+        Cell = 1
+        Problem = 'Above'
+        Solution = 'Discharge'
+        Volume = cell1.FV
+        emailAlert(Date, Cell, Problem, Solution, Volume)
+        
     if cell2.WL > (cell2.OD+variance):
         cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
         cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA) 
-
+        Date = str(date)
+        Cell = 2
+        Problem = 'Above'
+        Solution = 'Discharge'
+        Volume = cell2.FV
+        emailAlert(Date, Cell, Problem, Solution, Volume)
+        
     if cell3.WL > (cell3.OD+variance):
         cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
-
+        Date = str(date)
+        Cell = 3
+        Problem = 'Above'
+        Solution = 'Discharge'
+        Volume = cell3.FV
+        emailAlert(Date, Cell, Problem, Solution, Volume)
+        
     # Second, check to see if water is underfilled anywhere:
     if cell3.WL >=(cell3.OD-variance):
         cell3.FV =0
     else:                                                                     
         cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
+        Date = str(date)
+        Cell = 3
+        Problem = 'below'
+        Solution = 'Addition'
+        Volume = abs(cell3.FV)
+        emailAlert(Date, Cell, Problem, Solution, Volume)
     cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
@@ -265,6 +317,12 @@ def controlSystem():
     else:                                                                    
         cell2.FV =(cell2.OD-cell2.WL)*cell2.SA
         cell1.WL =((cell1.WL*cell1.SA)-((cell2.FV)))/cell1.SA
+        Date = str(date)
+        Cell = 2
+        Problem = 'below'
+        Solution = 'Addition'
+        Volume = abs(cell2.FV)
+        emailAlert(Date, Cell, Problem, Solution, Volume)
     cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
       
     if cell1.WL >=(cell1.OD-variance):
@@ -272,6 +330,12 @@ def controlSystem():
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
+        Date = str(date)
+        Cell = 3
+        Problem = 'below'
+        Solution = 'Addition'
+        Volume = cell3.FV
+        emailAlert(Date, Cell, Problem, Solution, Volume)
     cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
 
@@ -344,7 +408,7 @@ def Main(data_file):
         CellVolume2 = np.append(CellVolume2,cell2.CV)
         CellVolume3 = np.append(CellVolume3,cell3.CV)
         
-        controlSystem() # calling the control system allows the simulation to update key variables (Primarily Water Levels) based on the daily input states
+        controlSystem(day) # calling the control system allows the simulation to update key variables (Primarily Water Levels) based on the daily input states
         
         cell1_TN_removed[day]=(AGB_Daily[day]*cell1.SA*TN_extract) #g
         cell2_TN_removed[day]=(AGB_Daily[day]*cell2.SA*TN_extract)
@@ -485,8 +549,8 @@ def Main(data_file):
             plt.xlabel('Day')
             plt.show()       
     
-    cell = '1' # change this variable depending on which cell graphs you want to see
-    plotWaterLevel(cell)
+#    cell = '1' # change this variable depending on which cell graphs you want to see
+#    plotWaterLevel(cell)
 #    plotNi(cell)
 #    plotPh(cell)
 #    plotFillVolume(cell)
