@@ -1,0 +1,110 @@
+import math
+
+# Definitions Used from Git Hub
+
+class cell1():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell2():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class cell3():
+    def __intit__(self, WaterLevel, OptimalDepth, SurfaceArea, Volume):
+        self.WL = WaterLevel
+        self.OD = OptimalDepth
+        self.SA = SurfaceArea
+        self.CV = Volume
+
+
+class Lagoon():
+    def __init__(self, LagoonLevel, SurfaceArea, MaxLevel, MinLevel):
+        self.LL = LagoonLevel
+        self.SA = SurfaceArea
+        self.Max = MaxLevel
+        self.Min = MinLevel
+
+
+# Culvert Dimensions, Slop and Friction Coefficient
+Diam = 0.6096
+R = Diam / 2
+SLOPE = 0.01
+n = 0.022
+
+# Cell and Lagoon Surface Areas
+cell1.SA = 9000
+cell2.SA = 9000
+cell3.SA = 6000
+Lagoon.SA = 13000
+
+# Cell Optimal Depths
+cell1.OD = 0.5
+cell2.OD = 0.5
+cell3.OD = 0.5
+
+#m for all measurements
+variance = 0.02
+
+cell1.WL = 0.54
+cell2.WL = 0.54
+cell3.WL = 0.54
+
+Depth1 = []
+Depth2 = []
+Depth3 = []
+Flow1 = []
+Flow2 = []
+Flow3 = []
+
+#since water levels are above 0.5 m, only one open channel flow is used. 
+#since the system is draining, begins at cell 1 and since each culvert has the same flow rate the drain times
+#are added together to find the total transfer time.
+
+while cell1.WL > 0.5:
+    H1 = (2 * R - cell1.WL)
+    Theta = 2 * math.acos((R - H1) / R)
+    A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+    P = (2 * math.pi * R) - R * Theta
+    Rh = A / P
+    Q1 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    Depth1.append(cell1.WL)
+    Flow1.append(Q1)
+    cell1.WL += (Q1 * (-60)) / cell1.SA
+
+print('Cell 1 was drained to', cell1.OD, 'm, gate closed after', len(Depth1), 'minutes.')
+
+while cell2.WL > 0.5:
+    H1 = (2 * R - cell2.WL)
+    Theta = 2 * math.acos((R - H1) / R)
+    A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+    P = (2 * math.pi * R) - R * Theta
+    Rh = A / P
+    Q2 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    Depth2.append(cell2.WL)
+    Flow2.append(Q2)
+    cell2.WL += (Q2 * (-60)) / cell2.SA
+
+print('Cell 2 was drained to', cell3.OD, 'm, gate closed after', len(Depth2) + len(Depth1), 'minutes.')
+
+while cell3.WL > 0.5:
+    H1 = (2 * R - cell3.WL)
+    Theta = 2 * math.acos((R - H1) / R)
+    A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+    P = (2 * math.pi * R) - R * Theta
+    Rh = A / P
+    Q3 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+    Depth3.append(cell3.WL)
+    Flow3.append(Q3)
+    cell3.WL += (Q2 * (-60)) / cell3.SA
+
+print('Cell 3 was drained to', cell3.OD, 'm, gate closed after', len(Depth2) + len(Depth1) + len(Depth3), 'minutes.')
+print('Retention Cell Gates were open for', len(Depth2) + len(Depth1) + len(Depth3), 'minutes')
