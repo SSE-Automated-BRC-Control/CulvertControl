@@ -377,7 +377,7 @@ def timeToFill():
             Flow3.append(Q3)
             waterLevel3 += (Q2 * (-60)) / cell3.SA
         
-        TotalTime = len(Depth2) + len(Depth1) + len(Depth3) / 60
+        TotalTime = (len(Depth2) + len(Depth1) + len(Depth3)) / 60
         
     else:
         return
