@@ -170,7 +170,7 @@ def environmentalSimulation(data_file):
     sunset_hour=[0]*len(day)
     
     for num in range(len(day)): 
-      solar_declination[num]=(0.409*(np.sin((0.0172*(num+110)-1.39))));
+      solar_declination[num]=(0.409*(np.sin((0.0172*(num+119)-1.39))));
       sunset_hour[num] = np.arccos(-np.tan(lat)*np.tan(solar_declination[num]));
       realitive_distance[num] = 1+0.033*np.cos(0.0172*(num+119));
       RA[num]=0.408*37.6*realitive_distance[num]*((sunset_hour[num]*np.sin(lat)*np.sin(solar_declination[num]))+np.cos(lat)*np.cos(solar_declination[num])*np.sin(sunset_hour[num]))
