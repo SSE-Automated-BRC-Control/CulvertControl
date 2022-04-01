@@ -341,43 +341,54 @@ def timeToFill():
         TotalTime = (len(Depth3) + len(Depth2) + len(Depth1)) / 60
     
     elif waterLevel1 >= (cell1.OD + variance):            # Case where cells have too much water
+        
+        while waterLevel3 > cell3.OD:
+            if waterLevel3 > R:  # Cell3.WL > R (Inlet Control)
+                Cd = 1.0  # Coefficient of Discharge (Round)
+                A3 = math.pi * (R ** 2)  # Cell3 Wetted Area
+                h = waterLevel3 - R
+                Q3 = Cd * A3 * math.sqrt(9.81 * h)  # Cell3 Flow Rate
+            if waterLevel3 < R:  # Cell3.WL < R (Open Channel Flow)
+                H3 = (2 * R - waterLevel3)
+                Theta3 = 2 * math.acos((R - H3) / R)
+                A3 = math.pi * (R ** 2) - (((R ** 2) * (Theta3 - math.sin(Theta3))) / 2)  # Cell3 Wetted Area
+                P3 = (2 * math.pi * R) - R * Theta3  # Cell3 Wetted Perimeter
+                Rh3 = A3 / P3  # Cell3 Hydraulic Radius
+                Q3 = (A3 * (Rh3 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell3 Flow Rate
 
-        while waterLevel1 > cell1.OD:
-            H1 = (2 * R - waterLevel1)
-            Theta = 2 * math.acos((R - H1) / R)
-            A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
-            P = (2 * math.pi * R) - R * Theta
-            Rh = A / P
-            Q1 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
-            Depth1.append(waterLevel1)
-            Flow1.append(Q1)
-            waterLevel1 += (Q1 * (-60)) / cell1.SA
-        
-        
-        while waterLevel2 > cell1.OD:
-            H1 = (2 * R - waterLevel2)
-            Theta = 2 * math.acos((R - H1) / R)
-            A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
-            P = (2 * math.pi * R) - R * Theta
-            Rh = A / P
-            Q2 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
-            Depth2.append(waterLevel2)
-            Flow2.append(Q2)
-            waterLevel2 += (Q2 * (-60)) / cell2.SA
-        
-        
-        while waterLevel3 > cell1.OD:
-            H1 = (2 * R - waterLevel3)
-            Theta = 2 * math.acos((R - H1) / R)
-            A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
-            P = (2 * math.pi * R) - R * Theta
-            Rh = A / P
-            Q3 = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+            while waterLevel2 > cell2.OD:  # exit flow rate for cell 2
+                HL2 = (waterLevel2 + 0.2) - waterLevel3
+                H2 = (2 * R - waterLevel2)
+                Theta2 = 2 * math.acos((R - H2) / R)
+                A2 = math.pi * (R ** 2) - (((R ** 2) * (Theta2 - math.sin(Theta2))) / 2)  # Cell2 Wetted Area
+                P2 = (2 * math.pi * R) - R * Theta2  # Cell2 wetted perimeter
+                Rh2 = A2 / P2  # Hydraulic Radius
+                Q2 = (A2 * (Rh2 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell2 Flow Rate
+
+                while waterLevel1 > cell1.OD:
+                    HL1 = (waterLevel1 + 0.2) - waterLevel2
+                    H1 = (2 * R - waterLevel1)
+                    Theta1 = 2 * math.acos((R - H1) / R)
+                    A1 = math.pi * (R ** 2) - (((R ** 2) * (Theta1 - math.sin(Theta1))) / 2)  # Cell1 Wetted Area
+                    P1 = (2 * math.pi * R) - R * Theta1  # Cell 1 Wetted Perimeter
+                    Rh1 = A1 / P1  # Cell 1 Hydraulic Radius
+                    Q1 = (A1 * (Rh1 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell1 Flow Rate
+                    Depth1.append(waterLevel1)
+                    Depth2.append(waterLevel2)
+                    waterLevel1 += (Q1 * (-60)) / cell1.SA  # Water Leaving Cell1
+                    waterLevel2 += (Q1 * 60) / cell2.SA  # Water Added to Cell2
+                Depth2.append(waterLevel2)
+                Depth3.append(waterLevel3)
+                Flow2.append(Q2)
+                waterLevel2 += (Q2 * (-60)) / cell2.SA  # Water Leaving Cell2
+                waterLevel3 += (Q2 * 60) / cell3.SA  # Water Added to Cell3
             Depth3.append(waterLevel3)
             Flow3.append(Q3)
-            waterLevel3 += (Q2 * (-60)) / cell3.SA
-        
-        TotalTime = (len(Depth2) + len(Depth1) + len(Depth3)) / 60
+            waterLevel3 += (Q3 * (-60)) / cell3.SA  # Water Leaving Cell3
+
+        TotalTime = (len(Depth1) + len(Depth2) + len(Depth3)) / 60                  #Total Time to Return to 0.5m
+
+
         
     else:
         return
