@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 #import smtplib, ssl
 import math
+import pandas as pd
 
 #_________________________________________
 # Defining classes
@@ -424,40 +425,44 @@ def controlSystem(date):
     #Changes water levels based on if they need water 
     # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
     # is not explicitly defined in this code. 
-    
+
+    date_range = pd.date_range(start= '2018,04,30', end='2018,10,01')
+    date_range = date_range.date
+
+
     variance = 0.02 #m for all measurements
     # First, check to see if water of overfilled anywhere:
     if cell1.WL > (cell1.OD+variance):
         cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 1
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell1.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     if cell2.WL > (cell2.OD+variance):
         cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
         cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA) 
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 2
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell2.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     if cell3.WL > (cell3.OD+variance):
         cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 3
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell3.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     # Second, check to see if water is underfilled anywhere:
     if cell3.WL >=(cell3.OD-variance):
@@ -465,12 +470,12 @@ def controlSystem(date):
     else:                                                                     
         cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 3
         Problem = 'below'
         Solution = 'Addition'
         Volume = abs(cell3.FV)
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
@@ -478,12 +483,12 @@ def controlSystem(date):
     else:                                                                    
         cell2.FV =(cell2.OD-cell2.WL)*cell2.SA
         cell1.WL =((cell1.WL*cell1.SA)-((cell2.FV)))/cell1.SA
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 2
         Problem = 'below'
         Solution = 'Addition'
         Volume = abs(cell2.FV)
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
       
     if cell1.WL >=(cell1.OD-variance):
@@ -491,12 +496,12 @@ def controlSystem(date):
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
-        '''Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 1
         Problem = 'below'
         Solution = 'Addition'
         Volume = cell1.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)'''
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
 
