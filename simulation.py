@@ -3,7 +3,7 @@
 """
 Created on Fri Nov 19 12:51:12 2021
 
-@author: nettiewallace & Arlo Reichert
+@author: nettiewallace & Arlo Reichert & Owen Thoresby
 
 
 this script will contain two simulations
@@ -745,6 +745,17 @@ ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(data_file)
 Main( data_file) 
 
 ''' END OF PROGRAM '''
+
+
+
+
+
+
+    
+
+
+
+
 
 
 
