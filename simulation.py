@@ -3,7 +3,7 @@
 """
 Created on Fri Nov 19 12:51:12 2021
 
-@author: nettiewallace & Arlo Reichert
+@author: nettiewallace & Arlo Reichert & Owen Thoresby
 
 
 this script will contain two simulations
@@ -17,7 +17,9 @@ and triggering reactions to data inputs.
 
 import matplotlib.pyplot as plt
 import numpy as np
-import smtplib, ssl
+#import smtplib, ssl
+import math
+import pandas as pd
 
 #_________________________________________
 # Defining classes
@@ -135,8 +137,8 @@ def environmentalSimulation(data_file):
     for num in range(len(day)):
         mortality=np.append(mortality,(Ya*AGB_Daily[num]*(o**(Temp[num]-20))))
 
-    AGB_cumulative = []
-    totalbiomass = []
+#    AGB_cumulative = []
+#    totalbiomass = []
     mortality_cumulative = np.cumsum(mortality); #cumulative mortality 
     bio_cumlative = np.cumsum(AGB_Daily); #Biomass production without mortality (g/m2)
     bio_cumlative = bio_cumlative-mortality_cumulative; #Total cumulative biomass (g/m2)
@@ -228,6 +230,166 @@ def environmentalSimulation(data_file):
 
 
 #_____________________________________________________
+# Time to fill function
+
+def timeToFill():
+    
+    variance = 0.02 #m
+    
+    # Culvert Dimensions, Slop and Friction Coefficient
+    Diam = 0.6096
+    R = Diam / 2
+    SLOPE = 0.01
+    n = 0.022
+    
+    # Initial Depths at start of transfer 
+    waterLevel1 = cell1.WL
+    waterLevel2 = cell2.WL
+    waterLevel3 = cell3.WL
+    lagoonLevel = Lagoon.LL
+    
+    # Empty lists that store the depths for each cell
+    DepthL = []
+    Depth1 = []
+    Depth2 = []
+    Depth3 = []
+    FlowL = []
+    Flow1 = []
+    Flow2 = []
+    Flow3 = []
+    
+    # Transfer between cells 2 and 3
+    # Continues loop until Cell 3 Depth reaches 0.5 m
+    # Alternates between 2 open flow equations based on Cell 2 Depth
+    
+    if waterLevel3 <= (cell3.OD - variance):          # Case where cells are low on water
+    
+        while waterLevel3 < cell3.OD:
+            while waterLevel2 > 0.1:
+                if waterLevel2 > R:
+                    H1 = (2 * R - waterLevel2)
+                    Theta = 2 * math.acos((R - H1) / R)
+                    A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+                    P = (2 * math.pi * R) - R * Theta
+                    Rh = A / P
+                    Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+                elif waterLevel2 < R:
+                    H1 = waterLevel2
+                    Theta = 2 * math.acos((R - H1) / R)
+                    A = (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+                    P = R * Theta
+                    Rh = A / P
+                    Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+                Depth2.append(waterLevel2)
+                Flow2.append(Q)
+                waterLevel2 += (Q * (-60)) / cell2.SA
+                Depth3.append(waterLevel3)
+                waterLevel3 += (Q * 60) / cell3.SA
+                if waterLevel3 >= cell3.OD:      #potentially not necessary to specify within WHILE loop
+                    break
+        
+        # Transfer between cells 1 and 2
+        # Continues loop until Cell 2 Depth reaches 0.5 m
+        # Alternates between 2 open flow equations based on Cell 2 Depth
+        while waterLevel2 < cell2.OD:
+            while waterLevel1 > 0.1:
+                if waterLevel1 > R:
+                    H1 = (2 * R - waterLevel1)
+                    Theta = 2 * math.acos((R - H1) / R)
+                    A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+                    P = (2 * math.pi * R) - R * Theta
+                    Rh = A / P
+                    Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+                elif waterLevel1 < R:
+                    H1 = waterLevel1
+                    Theta = 2 * math.acos((R - H1) / R)
+                    A = (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+                    P = R * Theta
+                    Rh = A / P
+                    Q = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+                Depth1.append(waterLevel1)
+                Flow1.append(Q)
+                waterLevel1 += (Q * (-60)) / cell1.SA
+                Depth2.append(waterLevel2)
+                waterLevel2 += (Q * 60) / cell1.SA
+                if waterLevel2 >= cell2.OD:     #potentially not necessary to specify within WHILE loop
+                    break
+        
+        
+        # Transfer between cells 1 and lagoon
+        # Continues loop until Cell 1 Depth reaches 0.5 m
+        # Assumed an average velocity for when the water is higher than the culvert diameter
+        # Changes to open channel flow if Lagoon height drops below Diam
+        
+        while waterLevel1 < cell1.OD:
+            if lagoonLevel > Diam:
+                QL = math.sqrt(lagoonLevel * 2 * 9.81) * (math.pi * (R**2))
+            elif lagoonLevel < Diam:
+                H1 = (2 * R - lagoonLevel)
+                Theta = 2 * math.acos((R - H1) / R)
+                A = math.pi * (R ** 2) - (((R ** 2) * (Theta - math.sin(Theta))) / 2)
+                P = (2 * math.pi * R) - R * Theta
+                Rh = A / P
+                QL = (A * (Rh ** (2 / 3)) * (SLOPE ** 0.5)) / n
+            DepthL.append(lagoonLevel)
+            FlowL.append(QL)
+            lagoonLevel += (Q * (-60)) / Lagoon.SA
+            Depth1.append(waterLevel1)
+            waterLevel1 += (Q * 60) / cell1.SA
+            if waterLevel1 >= cell1.OD:     #potentially not necessary to specify within WHILE loop
+                break
+        
+        TotalTime = (len(Depth3) + len(Depth2) + len(Depth1)) / 60
+    
+    elif waterLevel1 >= (cell1.OD + variance):            # Case where cells have too much water
+        while waterLevel1 > cell1.OD:
+            HL1 = (waterLevel1 + 0.2) - waterLevel2
+            H1 = (2 * R - waterLevel1)
+            Theta1 = 2 * math.acos((R - H1) / R)
+            A1 = math.pi * (R ** 2) - (((R ** 2) * (Theta1 - math.sin(Theta1))) / 2)  # Cell1 Wetted Area
+            P1 = (2 * math.pi * R) - R * Theta1  # Cell 1 Wetted Perimeter
+            Rh1 = A1 / P1  # Cell 1 Hydraulic Radius
+            Q1 = (A1 * (Rh1 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell1 Flow Rate
+            Depth1.append(waterLevel1)
+            waterLevel1 += (Q1 * (-60)) / cell1.SA  # Water Leaving Cell3
+            waterLevel2 += (Q1 * 60) / cell2.SA
+            
+            while waterLevel2 > cell2.OD:
+                H2 = (2 * R - waterLevel2)
+                Theta2 = 2 * math.acos((R - H2) / R)
+                A2 = math.pi * (R ** 2) - (((R ** 2) * (Theta2 - math.sin(Theta2))) / 2)  # Cell1 Wetted Area
+                P2 = (2 * math.pi * R) - R * Theta2 # Cell 1 Wetted Perimeter
+                Rh2 = A2 / P2  # Cell 1 Hydraulic Radius
+                Q2 = (A2 * (Rh1 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell1 Flow Rate
+                Depth2.append(waterLevel2)
+                waterLevel2 += (Q2 * (-60)) / cell2.SA  # Water Leaving Cell3
+                waterLevel3 += (Q2 * 60) / cell3.SA
+                
+                while waterLevel3 > cell3.OD:
+                    if waterLevel3 > R:  # Cell3.WL > R (Inlet Control)
+                        Cd = 1.0  # Coefficient of Discharge (Round)
+                        A3 = math.pi * (R ** 2)  # Cell3 Wetted Area
+                        h = waterLevel3 - R
+                        Q3 = Cd * A3 * math.sqrt(9.81 * h)  # Cell3 Flow Rate
+                        if waterLevel3 < R:  # Cell3.WL < R (Open Channel Flow)
+                            H3 = (2 * R - waterLevel3)
+                            Theta3 = 2 * math.acos((R - H3) / R)
+                            A3 = math.pi * (R ** 2) - (((R ** 2) * (Theta3 - math.sin(Theta3))) / 2)  # Cell3 Wetted Area
+                            P3 = (2 * math.pi * R) - R * Theta3  # Cell3 Wetted Perimeter
+                            Rh3 = A3 / P3  # Cell3 Hydraulic Radius
+                            Q3 = (A3 * (Rh3 ** (2 / 3)) * (SLOPE ** 0.5)) / n  # Cell3 Flow Rate
+                        Depth3.append(waterLevel3)
+                        waterLevel3 += (Q3 * (-60)) / cell3.SA
+            
+        TotalTime = (len(Depth2) + len(Depth1) + len(Depth3)) / 60
+        
+    else:
+        return
+
+    return TotalTime
+ 
+'''
+#_____________________________________________________
 # Email Alert function 
 
 def emailAlert(Date, Cell, Problem, Solution, Volume):
@@ -245,14 +407,14 @@ def emailAlert(Date, Cell, Problem, Solution, Volume):
 
         This message is sent from Python.
     
-        Update from {date}: Retention cell {cellnum} is {problem} its allowable water depth. {solution} of {volume} m^3 has begun. """
+        Update from {date}: Retention cell {cellnum} is {problem} its allowable water depth. {solution} of {volume:.2f} m^3 has begun."""
         
     
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(smtp_server, port, context=context) as server:
             server.login(sender_email, password)
             server.sendmail(sender_email, receiver_email, message.format(date = Date, cellnum =Cell, problem = Problem, solution = Solution , volume = Volume)) 
-
+'''
  
 #_________________________________________________
 #Control System Simulation
@@ -263,40 +425,44 @@ def controlSystem(date):
     #Changes water levels based on if they need water 
     # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
     # is not explicitly defined in this code. 
-    
+
+    date_range = pd.date_range(start= '2018,04,30', end='2018,10,01')
+    date_range = date_range.date
+
+
     variance = 0.02 #m for all measurements
     # First, check to see if water of overfilled anywhere:
     if cell1.WL > (cell1.OD+variance):
         cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 1
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell1.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     if cell2.WL > (cell2.OD+variance):
         cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
         cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA) 
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 2
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell2.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     if cell3.WL > (cell3.OD+variance):
         cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 3
         Problem = 'Above'
         Solution = 'Discharge'
         Volume = cell3.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         
     # Second, check to see if water is underfilled anywhere:
     if cell3.WL >=(cell3.OD-variance):
@@ -304,12 +470,13 @@ def controlSystem(date):
     else:                                                                     
         cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 3
         Problem = 'below'
         Solution = 'Addition'
         Volume = abs(cell3.FV)
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
+
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
         
     if cell2.WL >=(cell2.OD-variance):
@@ -317,12 +484,13 @@ def controlSystem(date):
     else:                                                                    
         cell2.FV =(cell2.OD-cell2.WL)*cell2.SA
         cell1.WL =((cell1.WL*cell1.SA)-((cell2.FV)))/cell1.SA
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 2
         Problem = 'below'
         Solution = 'Addition'
         Volume = abs(cell2.FV)
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
+
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA)  
       
     if cell1.WL >=(cell1.OD-variance):
@@ -330,12 +498,12 @@ def controlSystem(date):
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
-        Date = str(date)
+        '''Day = str(date_range(date))
         Cell = 1
         Problem = 'below'
         Solution = 'Addition'
         Volume = cell1.FV
-        emailAlert(Date, Cell, Problem, Solution, Volume)
+        emailAlert(Day, Cell, Problem, Solution, Volume)'''
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
 
 
@@ -389,6 +557,8 @@ def Main(data_file):
     cell1_TP_removed = [0]*len(days) #[grams] || initiating lists for the amount of Ph removed each day
     cell2_TP_removed = [0]*len(days) 
     cell3_TP_removed = [0]*len(days) 
+    
+    fillTimes = np.array([])
 
     for day in range(1,len(days)):
         
@@ -408,7 +578,8 @@ def Main(data_file):
         CellVolume2 = np.append(CellVolume2,cell2.CV)
         CellVolume3 = np.append(CellVolume3,cell3.CV)
         
-        controlSystem(day) # calling the control system allows the simulation to update key variables (Primarily Water Levels) based on the daily input states
+        fillTimes = np.append(fillTimes,timeToFill())
+        controlSystem(day)              # calling the control system allows the simulation to update key variables (Primarily Water Levels) based on the daily input states
         
         cell1_TN_removed[day]=(AGB_Daily[day]*cell1.SA*TN_extract) #g
         cell2_TN_removed[day]=(AGB_Daily[day]*cell2.SA*TN_extract)
@@ -441,6 +612,20 @@ def Main(data_file):
             Gates_Operated=np.append(Gates_Operated,days[num])    
     
             
+            
+    def plotFillTimes(fillTimes):
+        #Plot of fill times for each day when intervention is necessary
+        fakedays = np.array([])
+        datalength = len(fillTimes)
+        for i in range(0,datalength):
+            fakedays = np.append(fakedays, i)
+        plt.scatter(fakedays, fillTimes, linestyle='solid', color='green')
+        plt.ylabel('Duration of Adjustment (hours)')
+        plt.xlabel('Day')
+        plt.show()
+            
+        
+        
     def plotWaterLevel(cell):
         #Plot of Water Levels     
         maxWL3 = [cell3.OD + 0.02]*len(days)
@@ -555,6 +740,7 @@ def Main(data_file):
 #    plotPh(cell)
 #    plotFillVolume(cell)
 #    plotCellVolume(cell)
+#    plotFillTimes(fillTimes)
     
     
 #Read Weather data CSV 
@@ -566,6 +752,17 @@ ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(data_file)
 Main( data_file) 
 
 ''' END OF PROGRAM '''
+
+
+
+
+
+
+    
+
+
+
+
 
 
 
