@@ -426,8 +426,8 @@ def controlSystem(date):
     # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
     # is not explicitly defined in this code. 
 
-    date_range = pd.date_range(start= '2018,04,30', end='2018,10,01')
-    date_range = date_range.date
+    x = pd.date_range(start='4/30/2018', end='10/01/2018')
+    date_range = x.date
 
 
     variance = 0.02 #m for all measurements
@@ -436,7 +436,7 @@ def controlSystem(date):
         cell1.FV = (cell1.OD-cell1.WL)*cell1.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell1.FV))/cell2.SA)
         cell1.WL = cell1.WL +(cell1.FV/cell1.SA)
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 1
         Problem = 'Above'
         Solution = 'Discharge'
@@ -447,7 +447,7 @@ def controlSystem(date):
         cell2.FV = (cell2.OD-cell2.WL)*cell2.SA
         cell3.WL =(((cell3.WL*cell3.SA)-(cell2.FV))/cell3.SA)
         cell2.WL = cell2.WL +(cell2.FV/cell2.SA) 
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 2
         Problem = 'Above'
         Solution = 'Discharge'
@@ -457,7 +457,7 @@ def controlSystem(date):
     if cell3.WL > (cell3.OD+variance):
         cell3.FV = (cell3.OD-cell3.WL)*cell3.SA # the excess water from cell3 gets ejected from the entire system
         cell3.WL = cell3.WL+(cell3.FV/cell3.SA) 
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 3
         Problem = 'Above'
         Solution = 'Discharge'
@@ -470,7 +470,7 @@ def controlSystem(date):
     else:                                                                     
         cell3.FV =(cell3.OD-cell3.WL)*cell3.SA
         cell2.WL =(((cell2.WL*cell2.SA)-(cell3.FV))/cell2.SA)
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 3
         Problem = 'below'
         Solution = 'Addition'
@@ -484,7 +484,7 @@ def controlSystem(date):
     else:                                                                    
         cell2.FV =(cell2.OD-cell2.WL)*cell2.SA
         cell1.WL =((cell1.WL*cell1.SA)-((cell2.FV)))/cell1.SA
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 2
         Problem = 'below'
         Solution = 'Addition'
@@ -498,7 +498,7 @@ def controlSystem(date):
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
         Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
-        '''Day = str(date_range(date))
+        '''Day = date_range(date)
         Cell = 1
         Problem = 'below'
         Solution = 'Addition'
