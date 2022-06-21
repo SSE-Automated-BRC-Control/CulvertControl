@@ -169,30 +169,6 @@ def environmentalSimulation(data_file):
     #Variables for Calcuaitons Based on Oakburn Estimations  
     #Simplified to rectangles, should be updated to trapazodial prisms 
 
-    
-#    for day in range(1,len(days)):
-#        Lagoon.LL[day]= Lagoon.LL[day-1]-ETo[day]+percip[day]
-    
-    # *****  INSTANTIATE CELL AND LAGOON OBJECTS FOR ANALYSIS:  *****
-    # inputs: (SurfaceArea, optimalDepth)
-    cell1 = Cell(9000, 0.5)
-    cell2 = Cell(9000, 0.5)
-    cell3 = Cell(6000, 0.5)
-    # inputs: (LagoonLevel, SurfaceArea, Maximum, Minimum)
-    # Lagoon Level Assumed to be max in Spring, Adjusted for ETo and Percip
-    lagoon = Lagoon(0, 13000, 1.5, 0.3)
-    # ***************************************************************
-    
-    # set initial lagoon waterlevel to the max value
-    lagoon.LL = lagoon.Max
-    
-    #Assume Water Levels are optimal on fill date (April 31)
-    cell1.WL = cell1.OD-ETo[0]+precip[0]
-    cell2.WL = cell2.OD-ETo[0]+precip[0]
-    cell3.WL = cell3.OD-ETo[0]+precip[0]
-    
-    Lagoon.LL= Lagoon.LL-ETo[0]+precip[0] 
-
     return (ETo, precip, day, bio_cumlative, AGB_Daily)
 
 
@@ -232,7 +208,7 @@ def controlSystem(date):
     #Changes water levels based on if they need water 
     # In the case of this simulation, the culvert control is assumed to be functioning properly, so the culvert control 
     # is not explicitly defined in this code. 
-    
+
     variance = 0.02 #m for all measurements
     # First, check to see if water of overfilled anywhere:
     if cell1.WL > (cell1.OD+variance):
@@ -298,7 +274,7 @@ def controlSystem(date):
         cell1.FV =0
     else:                                                            
         cell1.FV =(cell1.OD-cell1.WL)*cell1.SA
-        Lagoon.LL =((Lagoon.LL*Lagoon.SA)-cell1.FV)/Lagoon.SA
+        lagoon.LL =((lagoon.LL*lagoon.SA)-cell1.FV)/lagoon.SA
         Date = str(date)
         Cell = 1
         Problem = 'below'
@@ -311,15 +287,41 @@ def controlSystem(date):
 #__________________________________________
 # Putting Everything Together:
 
-def Main(data_file):
+def Main(data_file, Eto, precip):
+    
+    #    for day in range(1,len(days)):
+    #        Lagoon.LL[day]= Lagoon.LL[day-1]-ETo[day]+percip[day]
+    
+    # *****  INSTANTIATE CELL AND LAGOON OBJECTS FOR ANALYSIS:  *******************
+    
+    # inputs: (SurfaceArea, optimalDepth)
+    cell1 = Cell(9000, 0.5)
+    cell2 = Cell(9000, 0.5)
+    cell3 = Cell(6000, 0.5)
+    # inputs: (LagoonLevel, SurfaceArea, Maximum, Minimum)
+    # Lagoon Level Assumed to be max in Spring, Adjusted for ETo and Percip
+    lagoon = Lagoon(0, 13000, 1.5, 0.3)
+    
+    # set initial lagoon waterlevel to the max value
+    lagoon.LL = lagoon.Max
+    
+    #Assume Water Levels are optimal on fill date (April 31)
+    cell1.WL = cell1.OD-ETo[0]+precip[0]
+    cell2.WL = cell2.OD-ETo[0]+precip[0]
+    cell3.WL = cell3.OD-ETo[0]+precip[0]
+    
+    Lagoon.LL= Lagoon.LL-ETo[0]+precip[0] 
+    
+    # *****************************************************************************
+    
     
     ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(data_file) # take the ETO and precip values for each day of the simulation
     
     TN_extract = 0.0124 #Total Nitrogen accumulation rate (percent of above ground biomass)
     TP_extract = 0.0026 #Total Phosphorus accumulation rate (percent of above ground biomass)
 
-    Lagoon.TP = 0.55 #Should be changed to reflect actual values
-    Lagoon.TN = 7.07 #Lagoon Total Nitrogen concentration (g/m3) 
+    lagoon.TP = 0.55 #Should be changed to reflect actual values
+    lagoon.TN = 7.07 #Lagoon Total Nitrogen concentration (g/m3) 
 
     WaterLevel1 = np.array(cell1.WL) # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
     WaterLevel2 = np.array(cell2.WL)
@@ -333,21 +335,21 @@ def Main(data_file):
     FillVolume2 = np.array(cell2.FV)
     FillVolume3 = np.array(cell3.FV)
     
-    cell1_TN = np.array(Lagoon.TN)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
-    cell2_TN = np.array(Lagoon.TN)
-    cell3_TN = np.array(Lagoon.TN)
+    cell1_TN = np.array(lagoon.TN)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
+    cell2_TN = np.array(lagoon.TN)
+    cell3_TN = np.array(lagoon.TN)
 
-    cell1_TP = np.array(Lagoon.TP)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
-    cell2_TP = np.array(Lagoon.TP)
-    cell3_TP = np.array(Lagoon.TP)
+    cell1_TP = np.array(lagoon.TP)   # initiating the first value for each cell (day 1). FOR USE IN GRAPHS
+    cell2_TP = np.array(lagoon.TP)
+    cell3_TP = np.array(lagoon.TP)
 
-    cell1.TN = Lagoon.TN
-    cell2.TN = Lagoon.TN
-    cell3.TN = Lagoon.TN
+    cell1.TN = lagoon.TN
+    cell2.TN = lagoon.TN
+    cell3.TN = lagoon.TN
 
-    cell1.TP = Lagoon.TP
-    cell2.TP = Lagoon.TP
-    cell3.TP = Lagoon.TP
+    cell1.TP = lagoon.TP
+    cell2.TP = lagoon.TP
+    cell3.TP = lagoon.TP
     
     #TN removed is amount accumulated in biomass
     #AGB_Daily is g/m2 multiplied by SA equals grams 
@@ -387,11 +389,11 @@ def Main(data_file):
         cell2_TP_removed[day]=(AGB_Daily[day]*cell2.SA*TP_extract)
         cell3_TP_removed[day]=(AGB_Daily[day]*cell3.SA*TP_extract) 
         
-        cell1.TN=((cell1.TN*cell1.CV)+(cell1.FV*Lagoon.TN)-(cell1_TN_removed[day]))/(cell1.CV)
+        cell1.TN=((cell1.TN*cell1.CV)+(cell1.FV*lagoon.TN)-(cell1_TN_removed[day]))/(cell1.CV)
         cell2.TN=((cell2.TN*cell2.CV)+(cell2.FV*cell1.TN)-(cell2_TN_removed[day]))/(cell2.CV)
         cell3.TN=((cell3.TN*cell3.CV)+(cell3.FV*cell2.TN)-(cell3_TN_removed[day]))/(cell3.CV)
         
-        cell1.TP=((cell1.TP*cell1.CV)+(cell1.FV*Lagoon.TP)-(cell1_TP_removed[day]))/(cell1.CV)
+        cell1.TP=((cell1.TP*cell1.CV)+(cell1.FV*lagoon.TP)-(cell1_TP_removed[day]))/(cell1.CV)
         cell2.TP=((cell2.TP*cell2.CV)+(cell2.FV*cell1.TP)-(cell2_TP_removed[day]))/(cell2.CV)
         cell3.TP=((cell3.TP*cell3.CV)+(cell3.FV*cell2.TP)-(cell3_TP_removed[day]))/(cell3.CV)
 
@@ -533,7 +535,7 @@ data_file = np.loadtxt(fname ='Sample data file2.csv', delimiter=',')
 ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(data_file)   
 
 
-Main( data_file) 
+Main( data_file, Eto, precip) 
 
 ''' END OF PROGRAM '''
 
