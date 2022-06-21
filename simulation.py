@@ -22,47 +22,26 @@ import smtplib, ssl
 #_________________________________________
 # Defining classes
 
-class cell1():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
-        self.WL = WaterLevel
-        self.SM = SoilMoisture
-        self.TN = NiLevel
-        self.TP = PhLevel
-        self.FV = FillVolume
-        self.OD = OptimalDepth
-        self.SA = SurfaceArea
-        self.CV = Volume
+class Cell():
+    def __intit__ (self, SurfaceArea, optimalDepth):
+        self.WL = 0
+        self.SM = None
+        self.TN = None
+        self.TP = None
+        self.FV = None
+        self.OD = optimalDepth  # [m]
+        self.SA = SurfaceArea   # [m2]
+        self.CV = self.SA * self.WL
 
-class cell2():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
-        self.WL = WaterLevel
-        self.SM = SoilMoisture
-        self.TN = NiLevel #TN = total nitrogen 
-        self.TP = PhLevel #TP = total phosphorus 
-        self.FV = FillVolume
-        self.OD = OptimalDepth
-        self.SA = SurfaceArea
-        self.CV = Volume
-    
-class cell3():
-    def __intit__ (self, WaterLevel, SoilMoisture, NiLevel, PhLevel, FillVolume, OptimalDepth, SurfaceArea, Volume):
-        self.WL = WaterLevel
-        self.SM = SoilMoisture
-        self.TN = NiLevel
-        self.TP = PhLevel
-        self.FV = FillVolume
-        self.OD = OptimalDepth
-        self.SA = SurfaceArea
-        self.CV = Volume
 
 class Lagoon():
-    def __init__ (self, LagoonLevel, SurfaceArea, NiLevel, PhLevel, MaxLevel, MinLevel):
+    def __init__ (self, LagoonLevel, SurfaceArea, Maximum, Minimum):
         self.LL = LagoonLevel
         self.SA = SurfaceArea
-        self.TN = NiLevel
-        self.TP = PhLevel
-        self.Max = MaxLevel
-        self.Min = MinLevel
+        self.Max = Maximum  # [m]
+        self.Min = Minimum  # [m] we could potentially use this minimum value as a warning indicator during a period of insufficient water
+        self.TN = None
+        self.TP = None
 
         
         
@@ -189,40 +168,30 @@ def environmentalSimulation(data_file):
     
     #Variables for Calcuaitons Based on Oakburn Estimations  
     #Simplified to rectangles, should be updated to trapazodial prisms 
-    cell1.SA=9000 #m^2
-    cell2.SA=9000
-    cell3.SA=6000
-    Lagoon.SA=13000
+
     
-    #Lagoon Water Level Range 
-    Lagoon.Max =1.5 #m
-    Lagoon.Min =0.3 #m  # WE could potentially use this minimum value as a warning indicator during a period of insufficient water
-    
-    #Lagoon Level Assumed to be max in Spring, Adjusted for ETo and Percip
-    Lagoon.LL = Lagoon.Max
 #    for day in range(1,len(days)):
 #        Lagoon.LL[day]= Lagoon.LL[day-1]-ETo[day]+percip[day]
     
-    #Optium Depth of The Cells
-    cell1.OD =0.5 #m
-    cell2.OD =0.5 #m
-    cell3.OD =0.5 #m
-
+    # *****  INSTANTIATE CELL AND LAGOON OBJECTS FOR ANALYSIS:  *****
+    # inputs: (SurfaceArea, optimalDepth)
+    cell1 = Cell(9000, 0.5)
+    cell2 = Cell(9000, 0.5)
+    cell3 = Cell(6000, 0.5)
+    # inputs: (LagoonLevel, SurfaceArea, Maximum, Minimum)
+    # Lagoon Level Assumed to be max in Spring, Adjusted for ETo and Percip
+    lagoon = Lagoon(0, 13000, 1.5, 0.3)
+    # ***************************************************************
+    
+    # set initial lagoon waterlevel to the max value
+    lagoon.LL = lagoon.Max
+    
     #Assume Water Levels are optimal on fill date (April 31)
     cell1.WL = cell1.OD-ETo[0]+precip[0]
     cell2.WL = cell2.OD-ETo[0]+precip[0]
     cell3.WL = cell3.OD-ETo[0]+precip[0]
     
     Lagoon.LL= Lagoon.LL-ETo[0]+precip[0] 
-    
-    #How much each cell needs to be filled up by initially
-    cell1.FV = 0
-    cell2.FV = 0
-    cell3.FV = 0
-    
-    cell1.CV = cell1.SA*cell1.WL
-    cell2.CV = cell2.SA*cell2.WL
-    cell3.CV = cell3.SA*cell3.WL
 
     return (ETo, precip, day, bio_cumlative, AGB_Daily)
 
@@ -560,6 +529,7 @@ def Main(data_file):
 #Read Weather data CSV 
 data_file = np.loadtxt(fname ='Sample data file2.csv', delimiter=',')
 
+# configure environmental data
 ETo, precip, days, bio_cumlative, AGB_Daily = environmentalSimulation(data_file)   
 
 
